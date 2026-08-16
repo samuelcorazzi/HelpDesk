@@ -2,7 +2,6 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { apiRequest } from "@/lib/api";
-import { demoPassword, demoUser } from "@/lib/mock-data";
 import type { LoginResponse } from "@/lib/types";
 
 export default function LoginPage() {
@@ -11,37 +10,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  function saveSession(response: LoginResponse) {
-    localStorage.setItem("helpdesk_token", response.accessToken);
-    localStorage.setItem("helpdesk_user", JSON.stringify(response.user));
-  }
-
-  async function enterDemo() {
-    saveSession({ accessToken: "frontend-demo-token", user: demoUser });
-    await router.push("/home");
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "");
-    const password = String(formData.get("password") ?? "");
 
     try {
-      if (email === demoUser.email && password === demoPassword) {
-        await enterDemo();
-        return;
-      }
-
       const response = await apiRequest<LoginResponse>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: formData.get("email"),
+          password: formData.get("password"),
+        }),
       });
 
-      saveSession(response);
+      localStorage.setItem("helpdesk_token", response.accessToken);
+      localStorage.setItem("helpdesk_user", JSON.stringify(response.user));
+
       await router.push(response.user.role === "ADMIN" ? "/admin" : "/home");
     } catch (requestError) {
       setError(
@@ -160,17 +147,6 @@ export default function LoginPage() {
                 <span>→</span>
               </button>
             </form>
-
-            <div className="demo-access">
-              <div>
-                <strong>Acesso de demonstração</strong>
-                <small>{demoUser.email}</small>
-                <small>{demoPassword}</small>
-              </div>
-              <button type="button" onClick={() => void enterDemo()}>
-                Entrar como usuário
-              </button>
-            </div>
 
             <p className="login-help">
               Não possui acesso? <strong>Fale com o administrador.</strong>

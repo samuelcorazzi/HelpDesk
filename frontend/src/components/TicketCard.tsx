@@ -5,7 +5,7 @@ import {
   formatProtocol,
   ticketStatusLabel,
   urgencyLabel,
-} from "@/lib/mock-data";
+} from "@/lib/ticket-utils";
 
 export function TicketCard({ ticket }: { ticket: Ticket }) {
   return (

@@ -1,48 +1,10 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useMemo, useState } from "react";
 import { Header } from "@/components/Header";
-import { TicketCard } from "@/components/TicketCard";
-import { demoTickets } from "@/lib/mock-data";
-import type { TicketStatus } from "@/lib/types";
 
-type Filter = "ALL" | TicketStatus;
-
-const filters: Array<{ value: Filter; label: string }> = [
-  { value: "ALL", label: "Todos" },
-  { value: "OPEN", label: "Abertos" },
-  { value: "IN_PROGRESS", label: "Em atendimento" },
-  { value: "RESOLVED", label: "Resolvidos" },
-];
+const filters = ["Todos", "Abertos", "Em atendimento", "Resolvidos"];
 
 export default function HomePage() {
-  const [filter, setFilter] = useState<Filter>("ALL");
-  const [search, setSearch] = useState("");
-
-  const visibleTickets = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return demoTickets.filter((ticket) => {
-      const matchesStatus = filter === "ALL" || ticket.status === filter;
-      const matchesSearch =
-        !normalizedSearch ||
-        ticket.subject.toLowerCase().includes(normalizedSearch) ||
-        String(ticket.sequenceNumber).includes(normalizedSearch);
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [filter, search]);
-
-  const openCount = demoTickets.filter(
-    (ticket) => ticket.status === "OPEN",
-  ).length;
-  const progressCount = demoTickets.filter(
-    (ticket) => ticket.status === "IN_PROGRESS",
-  ).length;
-  const resolvedCount = demoTickets.filter(
-    (ticket) => ticket.status === "RESOLVED",
-  ).length;
-
   return (
     <>
       <Head>
@@ -52,9 +14,7 @@ export default function HomePage() {
         <section className="dashboard-hero">
           <div>
             <p className="eyebrow">Portal do usuário</p>
-            <h1>
-              Olá, João! <span aria-hidden="true">👋</span>
-            </h1>
+            <h1>Olá!</h1>
             <p>Acompanhe suas solicitações e encontre tudo o que precisa.</p>
           </div>
           <Link className="primary-button" href="/tickets/new">
@@ -67,7 +27,7 @@ export default function HomePage() {
             <span className="overview-icon">!</span>
             <div>
               <small>Chamados abertos</small>
-              <strong>{openCount}</strong>
+              <strong>0</strong>
               <p>Aguardando atendimento</p>
             </div>
           </article>
@@ -75,15 +35,15 @@ export default function HomePage() {
             <span className="overview-icon">↻</span>
             <div>
               <small>Em atendimento</small>
-              <strong>{progressCount}</strong>
-              <p>Sendo analisado pela equipe</p>
+              <strong>0</strong>
+              <p>Sendo analisados pela equipe</p>
             </div>
           </article>
           <article className="overview-card overview-resolved">
             <span className="overview-icon">✓</span>
             <div>
               <small>Chamados resolvidos</small>
-              <strong>{resolvedCount}</strong>
+              <strong>0</strong>
               <p>Finalizados com sucesso</p>
             </div>
           </article>
@@ -99,8 +59,6 @@ export default function HomePage() {
               <span>⌕</span>
               <input
                 type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar por assunto ou protocolo"
                 aria-label="Buscar chamados"
               />
@@ -112,43 +70,25 @@ export default function HomePage() {
             role="tablist"
             aria-label="Filtrar chamados"
           >
-            {filters.map((item) => {
-              const count =
-                item.value === "ALL"
-                  ? demoTickets.length
-                  : demoTickets.filter((ticket) => ticket.status === item.value)
-                      .length;
-
-              return (
-                <button
-                  className={filter === item.value ? "active" : ""}
-                  key={item.value}
-                  type="button"
-                  onClick={() => setFilter(item.value)}
-                >
-                  {item.label} <span>{count}</span>
-                </button>
-              );
-            })}
+            {filters.map((filter, index) => (
+              <button
+                className={index === 0 ? "active" : ""}
+                key={filter}
+                type="button"
+              >
+                {filter} <span>0</span>
+              </button>
+            ))}
           </div>
 
-          <div className="ticket-list">
-            {visibleTickets.length ? (
-              visibleTickets.map((ticket) => (
-                <TicketCard key={ticket.id} ticket={ticket} />
-              ))
-            ) : (
-              <div className="empty-state">
-                <span className="empty-icon">⌕</span>
-                <h3>Nenhum chamado encontrado</h3>
-                <p>Tente alterar o filtro ou buscar por outro termo.</p>
-              </div>
-            )}
+          <div className="empty-state user-empty-state">
+            <span className="empty-icon">▤</span>
+            <h3>Você ainda não possui chamados</h3>
+            <p>Quando uma solicitação for aberta, ela aparecerá nesta lista.</p>
+            <Link className="primary-button" href="/tickets/new">
+              Abrir primeiro chamado
+            </Link>
           </div>
-          <p className="demo-note">
-            Dados demonstrativos do frontend. A integração com os chamados da
-            API será a próxima etapa.
-          </p>
         </section>
       </Header>
     </>
