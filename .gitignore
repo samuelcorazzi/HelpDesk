@@ -1,6 +1,5 @@
 # Dependências
 node_modules/
-**/node_modules/
 .pnp/
 .pnp.*
 
@@ -17,8 +16,12 @@ dist/
 coverage/
 *.tsbuildinfo
 **/src/generated/prisma/
+.turbo/
+.vercel/
 
-# Logs e arquivos temporários
+# Caches, logs e arquivos temporários
+.cache/
+.eslintcache
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -29,6 +32,8 @@ temp/
 *.tmp
 *.bak
 *.swp
+*.swo
+*~
 
 # Arquivos auxiliares gerados pelo Prisma para agentes
 **/.agents/
@@ -45,6 +50,7 @@ backend-vazio/
 # Editores
 .vscode/
 .idea/
+.history/
 
 # Sistema operacional
 .DS_Store
@@ -54,3 +60,6 @@ desktop.ini
 # Relatórios locais
 coverage-final.json
 junit.xml
+
+# Arquivos locais de upload durante o desenvolvimento
+uploads/
