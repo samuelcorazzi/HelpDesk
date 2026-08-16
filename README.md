@@ -72,7 +72,7 @@ O repositório contém uma fundação funcional, autenticação JWT e o primeiro
 Navegador
    │
    ▼
-Next.js :3000
+Next.js :3002
    │ requisições HTTP
    ▼
 NestJS :3001/api
@@ -154,7 +154,7 @@ Abra `backend/.env` e substitua os exemplos pelas conexões do Supabase:
 
 ```env
 PORT=3001
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:3002
 JWT_SECRET="UMA_CHAVE_LONGA_E_ALEATORIA"
 JWT_EXPIRES_IN="8h"
 DATABASE_URL="CONEXAO_TRANSACTION_POOLER_DO_SUPABASE"
@@ -222,7 +222,7 @@ Copy-Item .env.example .env.local
 npm.cmd run dev
 ```
 
-Acesse [http://localhost:3000](http://localhost:3000). A página inicial redireciona para `/login`.
+Acesse [http://localhost:3002](http://localhost:3002). A página inicial redireciona para `/login`.
 
 ## Banco de dados
 
