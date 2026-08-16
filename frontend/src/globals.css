@@ -47,6 +47,11 @@ button,
   font-weight: 700;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 input,
 select,
 textarea {
@@ -89,10 +94,18 @@ h1 {
 }
 
 .topbar nav {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
   font-size: 14px;
+}
+
+.nav-logout {
+  border: 1px solid rgb(255 255 255 / 30%);
+  background: transparent;
+  padding: 7px 11px;
+  font-size: 13px;
 }
 
 .page-container {
@@ -173,6 +186,15 @@ h1 {
   border-radius: 10px;
   background: #eef3ff;
   color: #2445ae;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.form-error {
+  margin: 0;
+  border-radius: 10px;
+  background: #fff1f0;
+  color: #b42318;
   padding: 12px;
   font-size: 13px;
 }

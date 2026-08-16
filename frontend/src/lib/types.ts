@@ -1,6 +1,6 @@
-export type Role = 'USER' | 'ADMIN';
-export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
-export type Urgency = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type Role = "USER" | "ADMIN";
+export type TicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
+export type Urgency = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
 export interface User {
   id: string;
@@ -10,6 +10,11 @@ export interface User {
   active: boolean;
 }
 
+export interface LoginResponse {
+  accessToken: string;
+  user: User;
+}
+
 export interface Ticket {
   id: string;
   sequenceNumber: number;
@@ -17,7 +22,7 @@ export interface Ticket {
   description: string;
   urgency: Urgency;
   status: TicketStatus;
-  user?: Pick<User, 'id' | 'name' | 'email'>;
+  user?: Pick<User, "id" | "name" | "email">;
   createdAt: string;
   updatedAt: string;
 }

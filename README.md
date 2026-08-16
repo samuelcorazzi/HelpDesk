@@ -6,21 +6,22 @@ Projeto acadêmico para abertura, acompanhamento e gerenciamento de chamados de 
 
 ## Estado atual
 
-O repositório contém uma fundação funcional para iniciar o desenvolvimento. As regras de negócio ainda não foram implementadas.
+O repositório contém uma fundação funcional, autenticação JWT e o primeiro módulo de negócio. Chamados, Kanban e anexos ainda serão implementados.
 
-| Item | Estado |
-| --- | --- |
-| Projeto NestJS | Pronto |
-| PostgreSQL no Supabase | Conectado |
-| Schema e migration inicial do Prisma | Prontos |
-| Prisma Client no NestJS | Configurado |
-| Projeto Next.js com TypeScript | Pronto |
-| Páginas visuais iniciais | Prontas como estrutura |
-| Autenticação JWT | Pendente |
-| CRUD de usuários | Pendente |
-| CRUD de chamados | Pendente |
-| Kanban conectado à API | Pendente |
-| Upload no Supabase Storage | Pendente |
+| Item                                 | Estado                 |
+| ------------------------------------ | ---------------------- |
+| Projeto NestJS                       | Pronto                 |
+| PostgreSQL no Supabase               | Conectado              |
+| Schema e migration inicial do Prisma | Prontos                |
+| Prisma Client no NestJS              | Configurado            |
+| Projeto Next.js com TypeScript       | Pronto                 |
+| Páginas visuais iniciais             | Prontas como estrutura |
+| Autenticação JWT                     | Pronta                 |
+| CRUD de usuários                     | Pronto no backend      |
+| Login do frontend                    | Conectado à API        |
+| CRUD de chamados                     | Pendente               |
+| Kanban conectado à API               | Pendente               |
+| Upload no Supabase Storage           | Pendente               |
 
 ## Funcionalidades planejadas
 
@@ -91,9 +92,11 @@ HelpDesk-main/
 │   │   ├── migrations/              # Histórico versionado do banco
 │   │   └── schema.prisma            # Modelos User, Ticket e Attachment
 │   ├── src/
+│   │   ├── auth/                    # Login JWT e controle de acesso
 │   │   ├── database/                # Integração do NestJS com o Prisma
 │   │   ├── generated/prisma/        # Gerado automaticamente; não vai ao Git
 │   │   ├── health/                  # Endpoint usado para testar a API
+│   │   ├── users/                   # Criação e gerenciamento de usuários
 │   │   ├── app.module.ts            # Módulo raiz
 │   │   └── main.ts                  # Inicialização, CORS e porta
 │   ├── .env.example                 # Modelo de configuração sem segredos
@@ -152,6 +155,8 @@ Abra `backend/.env` e substitua os exemplos pelas conexões do Supabase:
 ```env
 PORT=3001
 FRONTEND_URL=http://localhost:3000
+JWT_SECRET="UMA_CHAVE_LONGA_E_ALEATORIA"
+JWT_EXPIRES_IN="8h"
 DATABASE_URL="CONEXAO_TRANSACTION_POOLER_DO_SUPABASE"
 DIRECT_URL="CONEXAO_SESSION_POOLER_DO_SUPABASE"
 ```
@@ -160,6 +165,22 @@ DIRECT_URL="CONEXAO_SESSION_POOLER_DO_SUPABASE"
 - `DIRECT_URL`: conexão usada nas migrations, normalmente na porta `5432`.
 - Senhas com símbolos precisam estar codificadas para URL.
 - Nunca envie o arquivo `.env` ao GitHub.
+
+Para criar o primeiro administrador, acrescente temporariamente ao `.env.local`:
+
+```env
+INITIAL_ADMIN_NAME="Administrador"
+INITIAL_ADMIN_EMAIL="admin@helpdesk.local"
+INITIAL_ADMIN_PASSWORD="UMA_SENHA_FORTE"
+```
+
+Em seguida, execute:
+
+```powershell
+npm.cmd run admin:create
+```
+
+O comando pode ser executado novamente para atualizar a senha do administrador inicial. O `.env.local` também é ignorado pelo Git.
 
 Prepare e confira o Prisma:
 
@@ -210,7 +231,7 @@ O schema inicial possui:
 ### `User`
 
 - Nome e e-mail.
-- Senha armazenada futuramente como hash.
+- Senha armazenada somente como hash `bcrypt`.
 - Papel `USER` ou `ADMIN`.
 - Estado ativo ou desativado.
 
@@ -230,6 +251,35 @@ O schema inicial possui:
 
 Não edite manualmente a tabela `_prisma_migrations` no Supabase.
 
+## API disponível
+
+### Autenticação
+
+| Método | Endpoint          | Acesso      | Finalidade                |
+| ------ | ----------------- | ----------- | ------------------------- |
+| `POST` | `/api/auth/login` | Público     | Entrar com e-mail e senha |
+| `GET`  | `/api/auth/me`    | Autenticado | Consultar o usuário atual |
+
+O token retornado pelo login deve ser enviado nas rotas protegidas:
+
+```text
+Authorization: Bearer TOKEN_JWT
+```
+
+### Usuários
+
+Todas as rotas abaixo exigem uma conta com papel `ADMIN`.
+
+| Método  | Endpoint                | Finalidade                          |
+| ------- | ----------------------- | ----------------------------------- |
+| `POST`  | `/api/users`            | Criar usuário                       |
+| `GET`   | `/api/users`            | Listar usuários                     |
+| `GET`   | `/api/users/:id`        | Visualizar usuário                  |
+| `PATCH` | `/api/users/:id`        | Editar nome, e-mail, senha ou papel |
+| `PATCH` | `/api/users/:id/status` | Ativar ou desativar usuário         |
+
+As respostas nunca retornam o hash da senha.
+
 ## Comandos úteis
 
 ### Backend
@@ -242,6 +292,7 @@ npm.cmd test                # executa testes unitários
 npm.cmd run prisma:generate # gera o Prisma Client
 npm.cmd run prisma:status   # confere as migrations
 npm.cmd run prisma:studio   # abre o editor visual do banco
+npm.cmd run admin:create    # cria ou atualiza o administrador inicial
 ```
 
 ### Frontend
@@ -262,7 +313,7 @@ Antes de começar uma tarefa:
 ```powershell
 git checkout main
 git pull origin main
-git checkout -b feature/nome-da-tarefa
+git switch -c nome-da-tarefa
 ```
 
 Depois de desenvolver e testar:
@@ -270,8 +321,8 @@ Depois de desenvolver e testar:
 ```powershell
 git status
 git add .
-git commit -m "feat: descrição curta da alteração"
-git push -u origin feature/nome-da-tarefa
+git commit -m "Descrição curta da alteração"
+git push -u origin nome-da-tarefa
 ```
 
 Nunca versionar:
@@ -283,25 +334,25 @@ Nunca versionar:
 
 ## Roadmap até a entrega
 
-| Período | Objetivo |
-| --- | --- |
-| 16–17/08 | Fundação do projeto, Supabase, Prisma, builds e documentação |
-| 18–19/08 | Usuários, hash de senha, administrador inicial e autenticação JWT |
-| 20–21/08 | Criação, listagem e detalhes dos chamados |
-| 22/08 | Alteração de status, dashboard e Kanban |
-| 23/08 | Supabase Storage e anexos |
-| 24/08 | Integração final, testes e correções |
-| 25/08 | Revisão, apresentação e entrega |
+| Período  | Objetivo                                                                      |
+| -------- | ----------------------------------------------------------------------------- |
+| 16–17/08 | Fundação do projeto, Supabase, Prisma, builds e documentação                  |
+| 18–19/08 | Usuários, hash de senha, administrador inicial e autenticação JWT — concluído |
+| 20–21/08 | Criação, listagem e detalhes dos chamados                                     |
+| 22/08    | Alteração de status, dashboard e Kanban                                       |
+| 23/08    | Supabase Storage e anexos                                                     |
+| 24/08    | Integração final, testes e correções                                          |
+| 25/08    | Revisão, apresentação e entrega                                               |
 
 ## Próxima etapa recomendada
 
-Implementar o módulo de usuários no backend:
+Implementar o módulo de chamados no backend:
 
-1. Instalar validação, JWT e biblioteca de hash de senha.
-2. Criar DTOs de usuário.
-3. Criar `UsersService` e `UsersController`.
-4. Criar o administrador inicial por seed.
-5. Implementar login e proteção por papel.
+1. Criar DTOs de abertura e atualização de chamado.
+2. Permitir que usuários visualizem somente os próprios chamados.
+3. Permitir que administradores visualizem todos os chamados.
+4. Gerar e retornar o número de protocolo.
+5. Implementar a alteração de status e conectar o Kanban.
 
 ## Critérios mínimos para a entrega
 
