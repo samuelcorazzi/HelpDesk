@@ -28,6 +28,17 @@ function getAccess(area: HeaderProps["area"], isClient: boolean) {
   }
 }
 
+function getStoredUser(isClient: boolean) {
+  if (!isClient) return null;
+
+  try {
+    const storedUser = localStorage.getItem("helpdesk_user");
+    return storedUser ? (JSON.parse(storedUser) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function Header({ children, area = "user" }: HeaderProps) {
   const router = useRouter();
   const isClient = useSyncExternalStore(
@@ -36,6 +47,7 @@ export function Header({ children, area = "user" }: HeaderProps) {
     getServerSnapshot,
   );
   const access = getAccess(area, isClient);
+  const user = getStoredUser(isClient);
 
   useEffect(() => {
     if (access === "login") {
@@ -44,9 +56,7 @@ export function Header({ children, area = "user" }: HeaderProps) {
       void router.replace("/login");
     }
 
-    if (access === "home") {
-      void router.replace("/home");
-    }
+    if (access === "home") void router.replace("/home");
   }, [access, router]);
 
   function logout() {
@@ -58,36 +68,110 @@ export function Header({ children, area = "user" }: HeaderProps) {
   if (access !== "allowed") {
     return (
       <main className="auth-page">
+        <div className="loading-mark">H</div>
         <p className="muted">Verificando acesso...</p>
       </main>
     );
   }
 
+  const isActive = (path: string) => router.pathname === path;
+
   return (
     <div className="app-shell">
-      <header className="topbar">
+      <aside className="sidebar">
         <Link className="brand" href={area === "admin" ? "/admin" : "/home"}>
-          HelpDesk
+          <span className="brand-mark">H</span>
+          <span>
+            Help<span className="brand-accent">Desk</span>
+          </span>
         </Link>
-        <nav aria-label="Navegação principal">
+
+        <nav className="sidebar-nav" aria-label="Navegação principal">
+          <p className="nav-section-label">Menu principal</p>
           {area === "admin" ? (
             <>
-              <Link href="/admin">Dashboard</Link>
-              <Link href="/admin/kanban">Kanban</Link>
-              <Link href="/admin/users">Usuários</Link>
+              <Link
+                className={isActive("/admin") ? "active" : ""}
+                href="/admin"
+              >
+                <span className="nav-icon">⌂</span> Dashboard
+              </Link>
+              <Link
+                className={isActive("/admin/kanban") ? "active" : ""}
+                href="/admin/kanban"
+              >
+                <span className="nav-icon">▦</span> Kanban
+              </Link>
+              <Link
+                className={isActive("/admin/users") ? "active" : ""}
+                href="/admin/users"
+              >
+                <span className="nav-icon">♙</span> Usuários
+              </Link>
             </>
           ) : (
             <>
-              <Link href="/home">Meus chamados</Link>
-              <Link href="/tickets/new">Abrir chamado</Link>
+              <Link className={isActive("/home") ? "active" : ""} href="/home">
+                <span className="nav-icon">⌂</span> Visão geral
+              </Link>
+              <Link
+                className={
+                  router.pathname.startsWith("/tickets/") &&
+                  !isActive("/tickets/new")
+                    ? "active"
+                    : ""
+                }
+                href="/home#tickets"
+              >
+                <span className="nav-icon">▤</span> Meus chamados
+              </Link>
+              <Link
+                className={isActive("/tickets/new") ? "active" : ""}
+                href="/tickets/new"
+              >
+                <span className="nav-icon">＋</span> Abrir chamado
+              </Link>
             </>
           )}
-          <button className="nav-logout" type="button" onClick={logout}>
+        </nav>
+
+        {area === "user" ? (
+          <div className="support-card">
+            <span className="support-icon">?</span>
+            <strong>Precisa de ajuda?</strong>
+            <p>Abra um chamado e nossa equipe entrará em contato.</p>
+            <Link href="/tickets/new">Solicitar suporte</Link>
+          </div>
+        ) : null}
+
+        <div className="sidebar-user">
+          <span className="user-avatar">{user?.name?.charAt(0) ?? "U"}</span>
+          <span className="user-summary">
+            <strong>{user?.name ?? "Usuário"}</strong>
+            <small>{user?.email ?? ""}</small>
+          </span>
+          <button
+            className="logout-button"
+            type="button"
+            onClick={logout}
+            title="Sair"
+          >
+            ↪
+          </button>
+        </div>
+      </aside>
+
+      <div className="app-content">
+        <header className="mobile-topbar">
+          <Link className="brand" href={area === "admin" ? "/admin" : "/home"}>
+            <span className="brand-mark">H</span> HelpDesk
+          </Link>
+          <button className="logout-button" type="button" onClick={logout}>
             Sair
           </button>
-        </nav>
-      </header>
-      <main className="page-container">{children}</main>
+        </header>
+        <main className="page-container">{children}</main>
+      </div>
     </div>
   );
 }

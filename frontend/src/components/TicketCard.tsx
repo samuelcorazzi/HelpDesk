@@ -1,22 +1,37 @@
-import Link from 'next/link';
-import type { Ticket } from '@/lib/types';
-
-const statusLabel = {
-  OPEN: 'Aberto',
-  IN_PROGRESS: 'Em atendimento',
-  RESOLVED: 'Resolvido',
-} as const;
+import Link from "next/link";
+import type { Ticket } from "@/lib/types";
+import {
+  formatDate,
+  formatProtocol,
+  ticketStatusLabel,
+  urgencyLabel,
+} from "@/lib/mock-data";
 
 export function TicketCard({ ticket }: { ticket: Ticket }) {
   return (
     <Link className="ticket-card" href={`/tickets/${ticket.id}`}>
-      <span className="protocol">
-        HD-{String(ticket.sequenceNumber).padStart(6, '0')}
-      </span>
-      <strong>{ticket.subject}</strong>
-      <span className={`badge badge-${ticket.status.toLowerCase()}`}>
-        {statusLabel[ticket.status]}
-      </span>
+      <div className="ticket-main">
+        <div className="ticket-heading">
+          <span className="protocol">
+            {formatProtocol(ticket.sequenceNumber)}
+          </span>
+          <span
+            className={`status-badge status-${ticket.status.toLowerCase()}`}
+          >
+            <span className="status-dot" />
+            {ticketStatusLabel[ticket.status]}
+          </span>
+        </div>
+        <strong className="ticket-title">{ticket.subject}</strong>
+        <p>{ticket.description}</p>
+        <div className="ticket-meta">
+          <span>Aberto em {formatDate(ticket.createdAt)}</span>
+          <span className={`urgency urgency-${ticket.urgency.toLowerCase()}`}>
+            Urgência {urgencyLabel[ticket.urgency].toLowerCase()}
+          </span>
+        </div>
+      </div>
+      <span className="ticket-arrow">›</span>
     </Link>
   );
 }
