@@ -14,6 +14,23 @@
   --shadow: 0 12px 36px rgb(24 39 75 / 7%);
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0b1220;
+  --surface: #111b2e;
+  --surface-soft: #172338;
+  --foreground: #edf2f9;
+  --muted: #9ba9bc;
+  --border: #28364d;
+  --primary: #7896ff;
+  --primary-dark: #91a9ff;
+  --primary-soft: #1d2d59;
+  --success: #47c59a;
+  --warning: #f0a957;
+  --danger: #ff7777;
+  --shadow: 0 12px 36px rgb(0 0 0 / 22%);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -38,6 +55,9 @@ body {
     "Segoe UI",
     sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition:
+    background 180ms ease,
+    color 180ms ease;
 }
 
 a {
@@ -97,12 +117,49 @@ p {
 
 .secondary-button {
   border: 1px solid var(--border);
-  background: white;
-  color: #344054;
+  background: var(--surface);
+  color: var(--foreground);
 }
 
 .secondary-button:hover {
   background: var(--surface-soft);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 5px 16px rgb(24 39 75 / 7%);
+  color: var(--foreground);
+  font-size: 18px;
+  transition:
+    border 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--primary);
+  background: var(--surface-soft);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-with-label {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0 12px;
+  font-size: 16px;
+}
+
+.theme-toggle-with-label strong {
+  font-size: 11px;
+  font-weight: 750;
 }
 .muted {
   color: var(--muted);
@@ -122,7 +179,7 @@ p {
   display: grid;
   min-height: 100vh;
   grid-template-columns: minmax(430px, 46%) 1fr;
-  background: white;
+  background: var(--surface);
 }
 
 .login-showcase {
@@ -268,10 +325,18 @@ p {
   font-size: 12px;
 }
 .login-form-area {
+  position: relative;
   display: grid;
   min-height: 100vh;
   place-items: center;
   padding: 44px;
+}
+
+.login-theme-toggle {
+  position: absolute;
+  z-index: 2;
+  top: 24px;
+  right: 24px;
 }
 .auth-card {
   width: min(440px, 100%);
@@ -298,7 +363,7 @@ p {
 
 label {
   display: block;
-  color: #344054;
+  color: var(--foreground);
   font-size: 13px;
   font-weight: 750;
 }
@@ -311,7 +376,7 @@ textarea {
   border: 1px solid #d8dee8;
   border-radius: 10px;
   outline: 0;
-  background: white;
+  background: var(--surface);
   color: var(--foreground);
   padding: 12px 13px;
   transition:
@@ -404,8 +469,8 @@ textarea {
   display: flex;
   height: 100vh;
   flex-direction: column;
-  border-right: 1px solid #e5eaf1;
-  background: white;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
   padding: 28px 20px 18px;
 }
 
@@ -431,7 +496,7 @@ textarea {
   align-items: center;
   gap: 12px;
   border-radius: 10px;
-  color: #667085;
+  color: var(--muted);
   padding: 11px 12px;
   font-size: 13px;
   font-weight: 650;
@@ -439,8 +504,8 @@ textarea {
 }
 
 .sidebar-nav a:hover {
-  background: #f6f8fc;
-  color: #344054;
+  background: var(--surface-soft);
+  color: var(--foreground);
 }
 .sidebar-nav a.active {
   background: var(--primary-soft);
@@ -502,6 +567,15 @@ textarea {
   padding: 17px 3px 0;
 }
 
+.sidebar-theme-toggle {
+  flex: 0 0 40px;
+  margin-top: 16px;
+}
+
+.sidebar-nav + .sidebar-theme-toggle {
+  margin-top: auto;
+}
+
 .user-avatar {
   display: grid;
   width: 36px;
@@ -553,6 +627,12 @@ textarea {
 }
 .mobile-topbar {
   display: none;
+}
+
+.mobile-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 .page-container {
   width: min(1120px, calc(100% - 64px));
@@ -608,7 +688,7 @@ textarea {
   gap: 17px;
   border: 1px solid var(--border);
   border-radius: 15px;
-  background: white;
+  background: var(--surface);
   box-shadow: 0 7px 24px rgb(24 39 75 / 4%);
   padding: 23px;
 }
@@ -755,7 +835,7 @@ textarea {
   gap: 18px;
   border: 1px solid var(--border);
   border-radius: 13px;
-  background: white;
+  background: var(--surface);
   box-shadow: 0 4px 18px rgb(24 39 75 / 3%);
   padding: 18px 20px;
   transition:
@@ -875,7 +955,7 @@ textarea {
 .panel {
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: white;
+  background: var(--surface);
   box-shadow: 0 5px 22px rgb(24 39 75 / 4%);
 }
 
@@ -928,7 +1008,7 @@ textarea {
   gap: 22px;
   border: 1px solid var(--border);
   border-radius: 15px;
-  background: white;
+  background: var(--surface);
   box-shadow: var(--shadow);
   padding: 28px;
 }
@@ -1074,6 +1154,73 @@ textarea {
   line-height: 1.5;
 }
 
+:root[data-theme="dark"] .login-showcase {
+  background:
+    radial-gradient(circle at 15% 80%, rgb(73 111 232 / 25%), transparent 34%),
+    radial-gradient(circle at 85% 18%, rgb(64 198 178 / 10%), transparent 28%),
+    linear-gradient(145deg, #080f22 0%, #142654 100%);
+}
+
+:root[data-theme="dark"] .form-error {
+  background: #3a1d25;
+  color: #ff9c9c;
+}
+
+:root[data-theme="dark"] .support-card,
+:root[data-theme="dark"] .form-help-card {
+  border-color: #2b416e;
+  background: linear-gradient(145deg, #15213a, #18284a);
+}
+
+:root[data-theme="dark"] .support-card p,
+:root[data-theme="dark"] .form-help-card ul,
+:root[data-theme="dark"] .integration-notice {
+  color: #aebbd0;
+}
+
+:root[data-theme="dark"] .user-avatar,
+:root[data-theme="dark"] .filter-tabs button span {
+  background: #1b2b4d;
+}
+
+:root[data-theme="dark"] .logout-button:hover {
+  background: #2b2029;
+  color: #ff8b8b;
+}
+
+:root[data-theme="dark"] .overview-open .overview-icon,
+:root[data-theme="dark"] .status-open {
+  background: #3a2919;
+  color: #ffb45f;
+}
+
+:root[data-theme="dark"] .overview-progress .overview-icon,
+:root[data-theme="dark"] .status-in_progress {
+  background: #1d2d59;
+  color: #91a9ff;
+}
+
+:root[data-theme="dark"] .overview-resolved .overview-icon,
+:root[data-theme="dark"] .status-resolved {
+  background: #15382f;
+  color: #64d6ad;
+}
+
+:root[data-theme="dark"] .upload-field {
+  border-color: #3b4a62;
+  background: var(--surface-soft);
+  color: #c4cede;
+}
+
+:root[data-theme="dark"] .upload-field:hover {
+  border-color: var(--primary);
+  background: #192746;
+}
+
+:root[data-theme="dark"] .help-bulb {
+  background: #203153;
+}
+
 /* Existing admin */
 .page-heading {
   display: flex;
@@ -1095,7 +1242,7 @@ textarea {
 .kanban-column {
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: white;
+  background: var(--surface);
   box-shadow: 0 6px 22px rgb(24 39 75 / 4%);
 }
 .stat {
@@ -1165,7 +1312,7 @@ textarea {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--border);
-    background: white;
+    background: var(--surface);
     padding: 14px 18px;
   }
   .mobile-topbar .brand {

@@ -1,6 +1,7 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { apiRequest } from "@/lib/api";
 import type { LoginResponse } from "@/lib/types";
 
@@ -90,6 +91,7 @@ export default function LoginPage() {
         </section>
 
         <section className="login-form-area">
+          <ThemeToggle className="login-theme-toggle" />
           <div className="auth-card login-card">
             <div className="mobile-login-brand">
               <span className="brand-mark">H</span> HelpDesk

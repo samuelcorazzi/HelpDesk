@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { User } from "@/lib/types";
 
 interface HeaderProps {
@@ -144,6 +145,8 @@ export function Header({ children, area = "user" }: HeaderProps) {
           </div>
         ) : null}
 
+        <ThemeToggle className="sidebar-theme-toggle" showLabel />
+
         <div className="sidebar-user">
           <span className="user-avatar">{user?.name?.charAt(0) ?? "U"}</span>
           <span className="user-summary">
@@ -166,9 +169,12 @@ export function Header({ children, area = "user" }: HeaderProps) {
           <Link className="brand" href={area === "admin" ? "/admin" : "/home"}>
             <span className="brand-mark">H</span> HelpDesk
           </Link>
-          <button className="logout-button" type="button" onClick={logout}>
-            Sair
-          </button>
+          <div className="mobile-topbar-actions">
+            <ThemeToggle />
+            <button className="logout-button" type="button" onClick={logout}>
+              Sair
+            </button>
+          </div>
         </header>
         <main className="page-container">{children}</main>
       </div>
