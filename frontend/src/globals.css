@@ -1297,6 +1297,112 @@ textarea {
   font-size: 9px;
 }
 
+.ticket-conversation-panel {
+  margin-top: 20px;
+}
+
+.ticket-conversation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+}
+
+.ticket-conversation-heading h2 {
+  margin: 4px 0 0;
+  font-size: 16px;
+}
+
+.ticket-conversation-heading > span {
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  padding: 6px 10px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.ticket-message-list {
+  display: grid;
+  gap: 12px;
+  padding: 22px 0;
+}
+
+.ticket-message {
+  display: grid;
+  width: min(78%, 680px);
+  gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--background);
+  padding: 14px 16px;
+}
+
+.ticket-message-admin {
+  justify-self: end;
+  border-color: #cbd7f6;
+  background: var(--primary-soft);
+}
+
+.ticket-message-user {
+  justify-self: start;
+}
+
+.ticket-message > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ticket-message strong {
+  font-size: 11px;
+}
+
+.ticket-message span {
+  color: var(--muted);
+  font-size: 8px;
+  text-align: right;
+}
+
+.ticket-message p {
+  margin: 0;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.ticket-conversation-empty {
+  padding: 32px 10px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ticket-conversation-empty p {
+  margin: 0;
+}
+
+.ticket-reply-form {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.ticket-reply-form > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ticket-reply-form small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
 :root[data-theme="dark"] .login-showcase {
   background:
     radial-gradient(circle at 15% 80%, rgb(73 111 232 / 25%), transparent 34%),
@@ -1849,6 +1955,20 @@ textarea {
   }
   .admin-status-control select,
   .admin-ticket-details {
+    width: 100%;
+  }
+  .ticket-message {
+    width: 100%;
+  }
+  .ticket-message > div,
+  .ticket-reply-form > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ticket-message span {
+    text-align: left;
+  }
+  .ticket-reply-form .primary-button {
     width: 100%;
   }
   .user-row {

@@ -55,6 +55,19 @@ interface DadosCriacaoChamadoTeste {
   };
 }
 
+interface DadosMensagemChamadoTeste {
+  conteudo: string;
+  autorId: string;
+}
+
+interface DadosAtualizacaoChamadoTeste {
+  status?: string;
+  resolvedAt?: Date | null;
+  mensagens?: {
+    create: DadosMensagemChamadoTeste;
+  };
+}
+
 describe('API HelpDesk (ponta a ponta)', () => {
   let aplicacao: INestApplication<App>;
   let senhaCriptografada: string;
@@ -67,6 +80,7 @@ describe('API HelpDesk (ponta a ponta)', () => {
   let ultimaCriacaoChamado: DadosCriacaoChamadoTeste | undefined;
   let ultimaAtualizacaoChamado:
     { status: string; resolvedAt: Date | null } | undefined;
+  let ultimaMensagemChamado: DadosMensagemChamadoTeste | undefined;
 
   const usuarioAdministrador = {
     id: '7f35e7c4-6325-46bb-bf8e-9abb8f1b26fd',
@@ -98,6 +112,7 @@ describe('API HelpDesk (ponta a ponta)', () => {
     ultimaCriacaoUsuario = undefined;
     ultimaCriacaoChamado = undefined;
     ultimaAtualizacaoChamado = undefined;
+    ultimaMensagemChamado = undefined;
 
     criarRegistroLogin = jest
       .fn()
@@ -154,8 +169,28 @@ describe('API HelpDesk (ponta a ponta)', () => {
     atualizarChamado = jest
       .fn()
       .mockImplementation(
-        ({ data }: { data: { status: string; resolvedAt: Date | null } }) => {
-          ultimaAtualizacaoChamado = data;
+        ({ data }: { data: DadosAtualizacaoChamadoTeste }) => {
+          if (data.mensagens) {
+            ultimaMensagemChamado = data.mensagens.create;
+            return {
+              mensagens: [
+                {
+                  id: '941a4216-71a6-44cc-9be9-5b5723239469',
+                  conteudo: data.mensagens.create.conteudo,
+                  criadoEm: new Date(),
+                  autor:
+                    data.mensagens.create.autorId === usuarioAdministrador.id
+                      ? usuarioAdministrador
+                      : usuarioComum,
+                },
+              ],
+            };
+          }
+
+          ultimaAtualizacaoChamado = {
+            status: data.status ?? 'OPEN',
+            resolvedAt: data.resolvedAt ?? null,
+          };
           return {
             id: 'a25991c4-ce7a-4823-a795-a8ecbc3b313d',
             sequenceNumber: 1,
@@ -217,7 +252,9 @@ describe('API HelpDesk (ponta a ponta)', () => {
         ticket: {
           create: criarChamado,
           findMany: jest.fn().mockResolvedValue([]),
-          findFirst: jest.fn().mockResolvedValue(null),
+          findFirst: jest.fn().mockResolvedValue({
+            id: 'a25991c4-ce7a-4823-a795-a8ecbc3b313d',
+          }),
           findUnique: jest.fn().mockResolvedValue({
             id: 'a25991c4-ce7a-4823-a795-a8ecbc3b313d',
           }),
@@ -478,6 +515,81 @@ describe('API HelpDesk (ponta a ponta)', () => {
       .expect(403);
 
     expect(atualizarChamado).not.toHaveBeenCalled();
+  });
+
+  it('/api/chamados permite que administrador responda ao chamado', async () => {
+    const respostaEntrada = await request(aplicacao.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: usuarioAdministrador.email,
+        password: 'SenhaTeste123',
+      })
+      .expect(200);
+
+    const corpoEntrada =
+      respostaEntrada.body as unknown as RespostaEntradaTeste;
+
+    await request(aplicacao.getHttpServer())
+      .post('/api/chamados/a25991c4-ce7a-4823-a795-a8ecbc3b313d/mensagens')
+      .set('Authorization', `Bearer ${corpoEntrada.accessToken}`)
+      .send({ conteudo: 'Estamos analisando o problema informado.' })
+      .expect(201)
+      .expect((resposta) => {
+        expect(resposta.body).toMatchObject({
+          conteudo: 'Estamos analisando o problema informado.',
+          autor: { role: Role.ADMIN },
+        });
+      });
+
+    expect(ultimaMensagemChamado).toEqual({
+      conteudo: 'Estamos analisando o problema informado.',
+      autorId: usuarioAdministrador.id,
+    });
+  });
+
+  it('/api/chamados permite que o dono envie uma mensagem', async () => {
+    const respostaEntrada = await request(aplicacao.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: usuarioComum.email,
+        password: 'SenhaTeste123',
+      })
+      .expect(200);
+
+    const corpoEntrada =
+      respostaEntrada.body as unknown as RespostaEntradaTeste;
+
+    await request(aplicacao.getHttpServer())
+      .post('/api/chamados/a25991c4-ce7a-4823-a795-a8ecbc3b313d/mensagens')
+      .set('Authorization', `Bearer ${corpoEntrada.accessToken}`)
+      .send({ conteudo: 'Posso enviar mais informações se necessário.' })
+      .expect(201);
+
+    expect(ultimaMensagemChamado).toEqual({
+      conteudo: 'Posso enviar mais informações se necessário.',
+      autorId: usuarioComum.id,
+    });
+  });
+
+  it('/api/chamados rejeita mensagem vazia', async () => {
+    const respostaEntrada = await request(aplicacao.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: usuarioAdministrador.email,
+        password: 'SenhaTeste123',
+      })
+      .expect(200);
+
+    const corpoEntrada =
+      respostaEntrada.body as unknown as RespostaEntradaTeste;
+
+    await request(aplicacao.getHttpServer())
+      .post('/api/chamados/a25991c4-ce7a-4823-a795-a8ecbc3b313d/mensagens')
+      .set('Authorization', `Bearer ${corpoEntrada.accessToken}`)
+      .send({ conteudo: '   ' })
+      .expect(400);
+
+    expect(ultimaMensagemChamado).toBeUndefined();
   });
 
   afterEach(async () => {

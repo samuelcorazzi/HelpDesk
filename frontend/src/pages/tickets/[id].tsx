@@ -1,7 +1,12 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from "react";
 import { Header } from "@/components/Header";
 import { apiRequest, baixarArquivoApi } from "@/lib/api";
 import {
@@ -10,7 +15,13 @@ import {
   ticketStatusLabel,
   urgencyLabel,
 } from "@/lib/ticket-utils";
-import type { Attachment, Ticket, TicketStatus, User } from "@/lib/types";
+import type {
+  Attachment,
+  MensagemChamado,
+  Ticket,
+  TicketStatus,
+  User,
+} from "@/lib/types";
 
 const opcoesStatus: TicketStatus[] = ["OPEN", "IN_PROGRESS", "RESOLVED"];
 const assinarArmazenamento = () => () => undefined;
@@ -42,6 +53,7 @@ export default function TicketDetailsPage() {
   const [anexoBaixando, definirAnexoBaixando] = useState("");
   const [atualizandoStatus, definirAtualizandoStatus] = useState(false);
   const [mensagem, definirMensagem] = useState("");
+  const [enviandoMensagem, definirEnviandoMensagem] = useState(false);
   const administrador = useSyncExternalStore(
     assinarArmazenamento,
     obterAdministradorNoCliente,
@@ -104,7 +116,15 @@ export default function TicketDetailsPage() {
           body: JSON.stringify({ status: novoStatus }),
         },
       );
-      definirChamado(chamadoAtualizado);
+      definirChamado((chamadoAtual) =>
+        chamadoAtual
+          ? {
+              ...chamadoAtual,
+              ...chamadoAtualizado,
+              mensagens: chamadoAtual.mensagens,
+            }
+          : chamadoAtualizado,
+      );
       definirMensagem(
         `Status atualizado para ${ticketStatusLabel[novoStatus].toLowerCase()}.`,
       );
@@ -116,6 +136,50 @@ export default function TicketDetailsPage() {
       );
     } finally {
       definirAtualizandoStatus(false);
+    }
+  }
+
+  async function enviarMensagem(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (!chamado) return;
+
+    const formulario = evento.currentTarget;
+    const dadosFormulario = new FormData(formulario);
+    const conteudo = String(dadosFormulario.get("conteudo") ?? "").trim();
+    if (!conteudo) return;
+
+    definirErro("");
+    definirMensagem("");
+    definirEnviandoMensagem(true);
+
+    try {
+      const novaMensagem = await apiRequest<MensagemChamado>(
+        `/chamados/${chamado.id}/mensagens`,
+        {
+          method: "POST",
+          body: JSON.stringify({ conteudo }),
+        },
+      );
+
+      definirChamado((chamadoAtual) =>
+        chamadoAtual
+          ? {
+              ...chamadoAtual,
+              updatedAt: novaMensagem.criadoEm,
+              mensagens: [...(chamadoAtual.mensagens ?? []), novaMensagem],
+            }
+          : chamadoAtual,
+      );
+      definirMensagem("Mensagem enviada com sucesso.");
+      formulario.reset();
+    } catch (erroEnvio) {
+      definirErro(
+        erroEnvio instanceof Error
+          ? erroEnvio.message
+          : "Não foi possível enviar a mensagem.",
+      );
+    } finally {
+      definirEnviandoMensagem(false);
     }
   }
 
@@ -257,6 +321,73 @@ export default function TicketDetailsPage() {
               ) : (
                 <p className="muted">Este chamado não possui anexo.</p>
               )}
+            </section>
+
+            <section className="panel ticket-conversation-panel">
+              <div className="ticket-conversation-heading">
+                <div>
+                  <p className="eyebrow">Atendimento</p>
+                  <h2>Conversa do chamado</h2>
+                </div>
+                <span>{chamado.mensagens?.length ?? 0} mensagens</span>
+              </div>
+
+              {chamado.mensagens?.length ? (
+                <div className="ticket-message-list">
+                  {chamado.mensagens.map((item) => (
+                    <article
+                      className={`ticket-message ${item.autor.role === "ADMIN" ? "ticket-message-admin" : "ticket-message-user"}`}
+                      key={item.id}
+                    >
+                      <div>
+                        <strong>{item.autor.name}</strong>
+                        <span>
+                          {item.autor.role === "ADMIN"
+                            ? "Administrador"
+                            : "Usuário"}
+                          {" · "}
+                          {formatDate(item.criadoEm)}
+                        </span>
+                      </div>
+                      <p>{item.conteudo}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="ticket-conversation-empty">
+                  <p>Ainda não existem mensagens neste chamado.</p>
+                </div>
+              )}
+
+              <form className="ticket-reply-form" onSubmit={enviarMensagem}>
+                <label>
+                  {administrador
+                    ? "Responder ao solicitante"
+                    : "Enviar uma mensagem"}
+                  <textarea
+                    name="conteudo"
+                    rows={4}
+                    minLength={1}
+                    maxLength={2000}
+                    placeholder={
+                      administrador
+                        ? "Escreva uma orientação ou solicite mais informações..."
+                        : "Escreva sua resposta ou acrescente informações..."
+                    }
+                    required
+                  />
+                </label>
+                <div>
+                  <small>Máximo de 2.000 caracteres.</small>
+                  <button
+                    className="primary-button"
+                    type="submit"
+                    disabled={enviandoMensagem}
+                  >
+                    {enviandoMensagem ? "Enviando..." : "Enviar mensagem"}
+                  </button>
+                </div>
+              </form>
             </section>
           </>
         ) : (

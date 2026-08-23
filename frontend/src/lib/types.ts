@@ -26,8 +26,16 @@ export interface Ticket {
   status: TicketStatus;
   user?: Pick<User, "id" | "name" | "email">;
   attachments?: Attachment[];
+  mensagens?: MensagemChamado[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MensagemChamado {
+  id: string;
+  conteudo: string;
+  criadoEm: string;
+  autor: Pick<User, "id" | "name" | "role">;
 }
 
 export interface Attachment {

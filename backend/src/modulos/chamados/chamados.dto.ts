@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsEnum, IsString, Length } from 'class-validator';
 import { TicketStatus, Urgency } from '../../generated/prisma/enums';
 
@@ -17,4 +18,13 @@ export class CriarChamadoDto {
 export class AtualizarStatusChamadoDto {
   @IsEnum(TicketStatus)
   status!: TicketStatus;
+}
+
+export class EnviarMensagemChamadoDto {
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @Length(1, 2000)
+  conteudo!: string;
 }

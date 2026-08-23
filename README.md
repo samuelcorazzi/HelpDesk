@@ -22,6 +22,7 @@ O repositório contém uma fundação funcional, autenticação JWT, auditoria d
 | Auditoria de tentativas de login     | Pronta no banco             |
 | Criação, listagem e detalhes         | Prontos                     |
 | Operação administrativa dos chamados | Pronta                      |
+| Conversa entre usuário e admin       | Pronta no banco e na API    |
 | Anexo opcional local                 | Pronto para desenvolvimento |
 | Upload no Supabase Storage           | Pendente                    |
 
@@ -272,6 +273,12 @@ Durante o desenvolvimento, os arquivos são gravados em `backend/uploads/anexos`
 - Motivo interno da falha, quando houver.
 - Nunca armazena a senha digitada.
 
+### `MensagemChamado`
+
+- Texto da mensagem, autor, chamado e horário.
+- Permite conversa entre o administrador e o dono do chamado.
+- É removida automaticamente se o chamado for excluído.
+
 Não edite manualmente a tabela `_prisma_migrations` no Supabase.
 
 ## API disponível
@@ -314,6 +321,7 @@ Todas as rotas exigem autenticação. Usuários comuns acessam somente os própr
 | `GET`   | `/api/chamados/:id`                 | Visualizar os detalhes           |
 | `GET`   | `/api/chamados/:id/anexos/:anexoId` | Baixar um anexo autorizado       |
 | `PATCH` | `/api/chamados/:id/status`          | Alterar status (somente `ADMIN`) |
+| `POST`  | `/api/chamados/:id/mensagens`       | Enviar mensagem na conversa      |
 
 O envio usa `multipart/form-data`. O anexo é opcional, aceita PNG, JPG ou PDF e possui limite de 5 MB.
 
@@ -386,9 +394,8 @@ Nunca versionar:
 Evoluir os anexos e o acompanhamento dos chamados:
 
 1. Migrar os anexos locais para um bucket privado no Supabase Storage.
-2. Permitir que o administrador registre observações no atendimento.
-3. Exibir um histórico das alterações de status.
-4. Melhorar os indicadores do dashboard com filtros por período.
+2. Exibir um histórico das alterações de status.
+3. Melhorar os indicadores do dashboard com filtros por período.
 
 ## Critérios mínimos para a entrega
 

@@ -22,7 +22,11 @@ import type { RequisicaoAutenticada } from '../autenticacao/autenticacao.tipos';
 import { GuardaAutenticacaoJwt } from '../autenticacao/guarda-autenticacao-jwt';
 import { GuardaPapeis } from '../autenticacao/guarda-papeis';
 import { PapeisPermitidos } from '../autenticacao/papeis.decorador';
-import { AtualizarStatusChamadoDto, CriarChamadoDto } from './chamados.dto';
+import {
+  AtualizarStatusChamadoDto,
+  CriarChamadoDto,
+  EnviarMensagemChamadoDto,
+} from './chamados.dto';
 import { ServicoChamados } from './chamados.servico';
 import { configuracaoUploadAnexo } from './configuracao-upload';
 
@@ -64,6 +68,19 @@ export class ControladorChamados {
     return this.servicoChamados.atualizarStatus(
       identificador,
       dadosStatus.status,
+    );
+  }
+
+  @Post(':id/mensagens')
+  enviarMensagem(
+    @Req() requisicao: RequisicaoAutenticada,
+    @Param('id', new ParseUUIDPipe()) identificador: string,
+    @Body() dadosMensagem: EnviarMensagemChamadoDto,
+  ) {
+    return this.servicoChamados.enviarMensagem(
+      requisicao.user,
+      identificador,
+      dadosMensagem,
     );
   }
 

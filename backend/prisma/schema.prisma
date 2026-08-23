@@ -38,6 +38,7 @@ model User {
 
   tickets        Ticket[]
   registrosLogin RegistroLogin[]
+  mensagens      MensagemChamado[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,6 +75,7 @@ model Ticket {
   user   User   @relation(fields: [userId], references: [id])
 
   attachments Attachment[]
+  mensagens   MensagemChamado[]
 
   resolvedAt DateTime?
   createdAt  DateTime  @default(now())
@@ -96,4 +98,21 @@ model Attachment {
   createdAt DateTime @default(now())
 
   @@index([ticketId])
+}
+
+model MensagemChamado {
+  id       String @id @default(uuid()) @db.Uuid
+  conteudo String
+
+  chamadoId String @db.Uuid
+  chamado   Ticket @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+
+  autorId String @db.Uuid
+  autor   User   @relation(fields: [autorId], references: [id])
+
+  criadoEm DateTime @default(now())
+
+  @@index([chamadoId, criadoEm])
+  @@index([autorId])
+  @@map("mensagens_chamado")
 }

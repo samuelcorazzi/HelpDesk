@@ -7,7 +7,20 @@ import { ServicoPrisma } from '../../infraestrutura/banco-de-dados/servico-prism
 import { Prisma } from '../../generated/prisma/client';
 import { Role, TicketStatus } from '../../generated/prisma/enums';
 import type { UsuarioAutenticado } from '../autenticacao/autenticacao.tipos';
-import { CriarChamadoDto } from './chamados.dto';
+import { CriarChamadoDto, EnviarMensagemChamadoDto } from './chamados.dto';
+
+const selecaoMensagemPublica = {
+  id: true,
+  conteudo: true,
+  criadoEm: true,
+  autor: {
+    select: {
+      id: true,
+      name: true,
+      role: true,
+    },
+  },
+} satisfies Prisma.MensagemChamadoSelect;
 
 const selecaoChamadoPublico = {
   id: true,
@@ -34,6 +47,14 @@ const selecaoChamadoPublico = {
       size: true,
       createdAt: true,
     },
+  },
+} satisfies Prisma.TicketSelect;
+
+const selecaoChamadoDetalhado = {
+  ...selecaoChamadoPublico,
+  mensagens: {
+    orderBy: { criadoEm: 'asc' },
+    select: selecaoMensagemPublica,
   },
 } satisfies Prisma.TicketSelect;
 
@@ -92,11 +113,48 @@ export class ServicoChamados {
         id: identificador,
         ...(usuario.role === Role.ADMIN ? {} : { userId: usuario.id }),
       },
-      select: selecaoChamadoPublico,
+      select: selecaoChamadoDetalhado,
     });
 
     if (!chamado) throw new NotFoundException('Chamado não encontrado.');
     return chamado;
+  }
+
+  async enviarMensagem(
+    usuario: UsuarioAutenticado,
+    identificador: string,
+    dadosMensagem: EnviarMensagemChamadoDto,
+  ) {
+    const chamado = await this.bancoDeDados.ticket.findFirst({
+      where: {
+        id: identificador,
+        ...(usuario.role === Role.ADMIN ? {} : { userId: usuario.id }),
+      },
+      select: { id: true },
+    });
+
+    if (!chamado) throw new NotFoundException('Chamado não encontrado.');
+
+    const chamadoAtualizado = await this.bancoDeDados.ticket.update({
+      where: { id: identificador },
+      data: {
+        mensagens: {
+          create: {
+            conteudo: dadosMensagem.conteudo,
+            autorId: usuario.id,
+          },
+        },
+      },
+      select: {
+        mensagens: {
+          orderBy: { criadoEm: 'desc' },
+          take: 1,
+          select: selecaoMensagemPublica,
+        },
+      },
+    });
+
+    return chamadoAtualizado.mensagens[0];
   }
 
   async atualizarStatus(identificador: string, status: TicketStatus) {
