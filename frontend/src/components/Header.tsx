@@ -4,16 +4,18 @@ import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import type { User } from "@/lib/types";
 
+type AreaAplicacao = "user" | "admin";
+
 interface HeaderProps {
   children: ReactNode;
-  area?: "user" | "admin";
+  area?: AreaAplicacao | "auto";
 }
 
 const emptySubscribe = () => () => undefined;
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-function getAccess(area: HeaderProps["area"], isClient: boolean) {
+function getAccess(area: AreaAplicacao, isClient: boolean) {
   if (!isClient) return "loading";
 
   const token = localStorage.getItem("helpdesk_token");
@@ -47,8 +49,10 @@ export function Header({ children, area = "user" }: HeaderProps) {
     getClientSnapshot,
     getServerSnapshot,
   );
-  const access = getAccess(area, isClient);
   const user = getStoredUser(isClient);
+  const areaResolvida: AreaAplicacao =
+    area === "auto" ? (user?.role === "ADMIN" ? "admin" : "user") : area;
+  const access = getAccess(areaResolvida, isClient);
 
   useEffect(() => {
     if (access === "login") {
@@ -80,7 +84,10 @@ export function Header({ children, area = "user" }: HeaderProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link className="brand" href={area === "admin" ? "/admin" : "/home"}>
+        <Link
+          className="brand"
+          href={areaResolvida === "admin" ? "/admin" : "/home"}
+        >
           <span className="brand-mark">H</span>
           <span>
             Help<span className="brand-accent">Desk</span>
@@ -89,19 +96,13 @@ export function Header({ children, area = "user" }: HeaderProps) {
 
         <nav className="sidebar-nav" aria-label="Navegação principal">
           <p className="nav-section-label">Menu principal</p>
-          {area === "admin" ? (
+          {areaResolvida === "admin" ? (
             <>
               <Link
                 className={isActive("/admin") ? "active" : ""}
                 href="/admin"
               >
                 <span className="nav-icon">⌂</span> Dashboard
-              </Link>
-              <Link
-                className={isActive("/admin/kanban") ? "active" : ""}
-                href="/admin/kanban"
-              >
-                <span className="nav-icon">▦</span> Kanban
               </Link>
               <Link
                 className={isActive("/admin/users") ? "active" : ""}
@@ -136,7 +137,7 @@ export function Header({ children, area = "user" }: HeaderProps) {
           )}
         </nav>
 
-        {area === "user" ? (
+        {areaResolvida === "user" ? (
           <div className="support-card">
             <span className="support-icon">?</span>
             <strong>Precisa de ajuda?</strong>
@@ -166,7 +167,10 @@ export function Header({ children, area = "user" }: HeaderProps) {
 
       <div className="app-content">
         <header className="mobile-topbar">
-          <Link className="brand" href={area === "admin" ? "/admin" : "/home"}>
+          <Link
+            className="brand"
+            href={areaResolvida === "admin" ? "/admin" : "/home"}
+          >
             <span className="brand-mark">H</span> HelpDesk
           </Link>
           <div className="mobile-topbar-actions">

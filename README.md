@@ -6,22 +6,24 @@ Projeto acadêmico para abertura, acompanhamento e gerenciamento de chamados de 
 
 ## Estado atual
 
-O repositório contém uma fundação funcional, autenticação JWT e o primeiro módulo de negócio. Chamados, Kanban e anexos ainda serão implementados.
+O repositório contém uma fundação funcional, autenticação JWT, auditoria de login, gerenciamento administrativo de usuários e o fluxo do usuário para criar e acompanhar chamados.
 
-| Item                                 | Estado                 |
-| ------------------------------------ | ---------------------- |
-| Projeto NestJS                       | Pronto                 |
-| PostgreSQL no Supabase               | Conectado              |
-| Schema e migration inicial do Prisma | Prontos                |
-| Prisma Client no NestJS              | Configurado            |
-| Projeto Next.js com TypeScript       | Pronto                 |
-| Páginas visuais iniciais             | Prontas como estrutura |
-| Autenticação JWT                     | Pronta                 |
-| CRUD de usuários                     | Pronto no backend      |
-| Login do frontend                    | Conectado à API        |
-| CRUD de chamados                     | Pendente               |
-| Kanban conectado à API               | Pendente               |
-| Upload no Supabase Storage           | Pendente               |
+| Item                                 | Estado                      |
+| ------------------------------------ | --------------------------- |
+| Projeto NestJS                       | Pronto                      |
+| PostgreSQL no Supabase               | Conectado                   |
+| Schema e migration inicial do Prisma | Prontos                     |
+| Prisma Client no NestJS              | Configurado                 |
+| Projeto Next.js com TypeScript       | Pronto                      |
+| Páginas visuais iniciais             | Prontas como estrutura      |
+| Autenticação JWT                     | Pronta                      |
+| Cadastro e listagem de usuários      | Prontos                     |
+| Login do frontend                    | Conectado à API             |
+| Auditoria de tentativas de login     | Pronta no banco             |
+| Criação, listagem e detalhes         | Prontos                     |
+| Operação administrativa dos chamados | Pronta                      |
+| Anexo opcional local                 | Pronto para desenvolvimento |
+| Upload no Supabase Storage           | Pendente                    |
 
 ## Funcionalidades planejadas
 
@@ -40,7 +42,6 @@ O repositório contém uma fundação funcional, autenticação JWT e o primeiro
 - Criar, listar, editar e desativar usuários.
 - Visualizar todos os chamados.
 - Alterar o status entre aberto, em atendimento e resolvido.
-- Organizar chamados em um Kanban.
 - Visualizar e baixar anexos.
 - Acompanhar indicadores do sistema.
 
@@ -78,7 +79,8 @@ Next.js :3002
 NestJS :3001/api
    │
    ├── Prisma ──────────► PostgreSQL no Supabase
-   └── Supabase Storage ► anexos privados (etapa futura)
+   ├── uploads/anexos ─────────► anexos locais no desenvolvimento
+   └── Supabase Storage ───────► anexos compartilhados (etapa futura)
 ```
 
 O frontend nunca deve receber a senha do PostgreSQL, `DIRECT_URL`, `DATABASE_URL` ou chaves secretas do Supabase. Toda consulta ao banco passa pelo backend.
@@ -92,12 +94,10 @@ HelpDesk-main/
 │   │   ├── migrations/              # Histórico versionado do banco
 │   │   └── schema.prisma            # Modelos User, Ticket e Attachment
 │   ├── src/
-│   │   ├── auth/                    # Login JWT e controle de acesso
-│   │   ├── database/                # Integração do NestJS com o Prisma
+│   │   ├── infraestrutura/          # Integrações externas e banco de dados
+│   │   ├── modulos/                 # Autenticação, usuários e chamados
 │   │   ├── generated/prisma/        # Gerado automaticamente; não vai ao Git
-│   │   ├── health/                  # Endpoint usado para testar a API
-│   │   ├── users/                   # Criação e gerenciamento de usuários
-│   │   ├── app.module.ts            # Módulo raiz
+│   │   ├── modulo-principal.ts       # Módulo raiz
 │   │   └── main.ts                  # Inicialização, CORS e porta
 │   ├── .env.example                 # Modelo de configuração sem segredos
 │   ├── package.json
@@ -105,7 +105,7 @@ HelpDesk-main/
 │
 ├── frontend/                        # Aplicação Next.js
 │   ├── src/
-│   │   ├── components/              # Header, cartão e Kanban
+│   │   ├── components/              # Cabeçalho e componentes compartilhados
 │   │   ├── lib/                     # Cliente da API e tipos compartilhados
 │   │   ├── pages/                   # Rotas do Pages Router
 │   │   └── globals.css              # Estilos globais
@@ -131,6 +131,30 @@ Confira as versões:
 node --version
 npm --version
 git --version
+```
+
+## Inicialização automática no Windows
+
+Depois que o arquivo `backend/.env` estiver configurado, abra o CMD na raiz do projeto e execute:
+
+```cmd
+iniciar.cmd
+```
+
+O inicializador automaticamente:
+
+1. Confere o Node.js e o npm.
+2. Instala ou atualiza as dependências do backend e frontend.
+3. Gera o Prisma Client.
+4. Abre o projeto no VS Code.
+5. Inicia o NestJS na porta `3001`.
+6. Inicia o Next.js na porta `3002`.
+7. Abre a tela de login no navegador.
+
+Para encerrar os dois servidores:
+
+```cmd
+parar.cmd
 ```
 
 ## Configuração inicial
@@ -201,16 +225,6 @@ Inicie a API:
 npm.cmd run start:dev
 ```
 
-Teste em [http://localhost:3001/api/health](http://localhost:3001/api/health). A resposta esperada é semelhante a:
-
-```json
-{
-  "status": "ok",
-  "service": "helpdesk-api",
-  "timestamp": "2026-08-16T00:00:00.000Z"
-}
-```
-
 ### 3. Configurar o frontend
 
 Abra outro terminal na raiz do projeto:
@@ -246,8 +260,17 @@ O schema inicial possui:
 ### `Attachment`
 
 - Nome, tipo e tamanho do arquivo.
-- Caminho privado no Supabase Storage.
+- Caminho privado do arquivo.
 - Relação com o chamado.
+
+Durante o desenvolvimento, os arquivos são gravados em `backend/uploads/anexos` e essa pasta é ignorada pelo Git. Para publicar o sistema e compartilhar anexos entre todos os integrantes, a próxima evolução é trocar esse armazenamento local por um bucket privado no Supabase Storage.
+
+### `RegistroLogin`
+
+- Resultado da tentativa de login.
+- E-mail informado, IP, navegador e horário.
+- Motivo interno da falha, quando houver.
+- Nunca armazena a senha digitada.
 
 Não edite manualmente a tabela `_prisma_migrations` no Supabase.
 
@@ -279,6 +302,20 @@ Todas as rotas abaixo exigem uma conta com papel `ADMIN`.
 | `PATCH` | `/api/users/:id/status` | Ativar ou desativar usuário         |
 
 As respostas nunca retornam o hash da senha.
+
+### Chamados
+
+Todas as rotas exigem autenticação. Usuários comuns acessam somente os próprios chamados; administradores podem consultar todos.
+
+| Método  | Endpoint                            | Finalidade                       |
+| ------- | ----------------------------------- | -------------------------------- |
+| `POST`  | `/api/chamados`                     | Abrir chamado com anexo opcional |
+| `GET`   | `/api/chamados`                     | Listar chamados permitidos       |
+| `GET`   | `/api/chamados/:id`                 | Visualizar os detalhes           |
+| `GET`   | `/api/chamados/:id/anexos/:anexoId` | Baixar um anexo autorizado       |
+| `PATCH` | `/api/chamados/:id/status`          | Alterar status (somente `ADMIN`) |
+
+O envio usa `multipart/form-data`. O anexo é opcional, aceita PNG, JPG ou PDF e possui limite de 5 MB.
 
 ## Comandos úteis
 
@@ -339,20 +376,19 @@ Nunca versionar:
 | 16–17/08 | Fundação do projeto, Supabase, Prisma, builds e documentação                  |
 | 18–19/08 | Usuários, hash de senha, administrador inicial e autenticação JWT — concluído |
 | 20–21/08 | Criação, listagem e detalhes dos chamados                                     |
-| 22/08    | Alteração de status, dashboard e Kanban                                       |
+| 22/08    | Alteração de status e dashboard                                               |
 | 23/08    | Supabase Storage e anexos                                                     |
 | 24/08    | Integração final, testes e correções                                          |
 | 25/08    | Revisão, apresentação e entrega                                               |
 
 ## Próxima etapa recomendada
 
-Implementar o módulo de chamados no backend:
+Evoluir os anexos e o acompanhamento dos chamados:
 
-1. Criar DTOs de abertura e atualização de chamado.
-2. Permitir que usuários visualizem somente os próprios chamados.
-3. Permitir que administradores visualizem todos os chamados.
-4. Gerar e retornar o número de protocolo.
-5. Implementar a alteração de status e conectar o Kanban.
+1. Migrar os anexos locais para um bucket privado no Supabase Storage.
+2. Permitir que o administrador registre observações no atendimento.
+3. Exibir um histórico das alterações de status.
+4. Melhorar os indicadores do dashboard com filtros por período.
 
 ## Critérios mínimos para a entrega
 
@@ -363,6 +399,5 @@ Implementar o módulo de chamados no backend:
 - Usuário abre e acompanha chamados.
 - Protocolo é gerado automaticamente.
 - Administrador altera o status.
-- Kanban mostra as três etapas.
 - Anexos são privados.
 - README permite que outro integrante execute o projeto.

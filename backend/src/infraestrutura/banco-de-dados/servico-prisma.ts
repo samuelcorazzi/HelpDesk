@@ -1,24 +1,24 @@
 import 'dotenv/config';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import { PrismaClient } from '../../generated/prisma/client';
 
 @Injectable()
-export class PrismaService
+export class ServicoPrisma
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+    const enderecoConexao = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 
-    if (!connectionString) {
+    if (!enderecoConexao) {
       throw new Error(
         'Defina DIRECT_URL ou DATABASE_URL no arquivo backend/.env.',
       );
     }
 
     super({
-      adapter: new PrismaPg({ connectionString }),
+      adapter: new PrismaPg({ connectionString: enderecoConexao }),
     });
   }
 

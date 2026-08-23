@@ -1,10 +1,68 @@
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
+import { TicketCard } from "@/components/TicketCard";
+import { apiRequest } from "@/lib/api";
+import { formatProtocol } from "@/lib/ticket-utils";
+import type { Ticket, TicketStatus } from "@/lib/types";
 
-const filters = ["Todos", "Abertos", "Em atendimento", "Resolvidos"];
+const filtros: { rotulo: string; status: TicketStatus | "ALL" }[] = [
+  { rotulo: "Todos", status: "ALL" },
+  { rotulo: "Abertos", status: "OPEN" },
+  { rotulo: "Em atendimento", status: "IN_PROGRESS" },
+  { rotulo: "Resolvidos", status: "RESOLVED" },
+];
 
 export default function HomePage() {
+  const roteador = useRouter();
+  const [chamados, definirChamados] = useState<Ticket[]>([]);
+  const [filtroAtivo, definirFiltroAtivo] = useState<TicketStatus | "ALL">(
+    "ALL",
+  );
+  const [busca, definirBusca] = useState("");
+  const [erro, definirErro] = useState("");
+  const [carregando, definirCarregando] = useState(true);
+
+  useEffect(() => {
+    async function carregarChamados() {
+      try {
+        definirChamados(await apiRequest<Ticket[]>("/chamados"));
+      } catch (erroCarregamento) {
+        definirErro(
+          erroCarregamento instanceof Error
+            ? erroCarregamento.message
+            : "Não foi possível carregar os chamados.",
+        );
+      } finally {
+        definirCarregando(false);
+      }
+    }
+
+    void carregarChamados();
+  }, []);
+
+  const chamadosFiltrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+
+    return chamados.filter((chamado) => {
+      const correspondeStatus =
+        filtroAtivo === "ALL" || chamado.status === filtroAtivo;
+      const correspondeBusca =
+        !termo ||
+        chamado.subject.toLowerCase().includes(termo) ||
+        formatProtocol(chamado.sequenceNumber).toLowerCase().includes(termo);
+
+      return correspondeStatus && correspondeBusca;
+    });
+  }, [busca, chamados, filtroAtivo]);
+
+  const quantidadePorStatus = (status: TicketStatus | "ALL") =>
+    status === "ALL"
+      ? chamados.length
+      : chamados.filter((chamado) => chamado.status === status).length;
+
   return (
     <>
       <Head>
@@ -22,12 +80,19 @@ export default function HomePage() {
           </Link>
         </section>
 
+        {roteador.query.chamadoCriado ? (
+          <p className="form-message form-message-success">
+            Chamado enviado com sucesso. Protocolo{" "}
+            {formatProtocol(Number(roteador.query.chamadoCriado))}.
+          </p>
+        ) : null}
+
         <section className="overview-grid" aria-label="Resumo dos chamados">
           <article className="overview-card overview-open">
             <span className="overview-icon">!</span>
             <div>
               <small>Chamados abertos</small>
-              <strong>0</strong>
+              <strong>{quantidadePorStatus("OPEN")}</strong>
               <p>Aguardando atendimento</p>
             </div>
           </article>
@@ -35,7 +100,7 @@ export default function HomePage() {
             <span className="overview-icon">↻</span>
             <div>
               <small>Em atendimento</small>
-              <strong>0</strong>
+              <strong>{quantidadePorStatus("IN_PROGRESS")}</strong>
               <p>Sendo analisados pela equipe</p>
             </div>
           </article>
@@ -43,7 +108,7 @@ export default function HomePage() {
             <span className="overview-icon">✓</span>
             <div>
               <small>Chamados resolvidos</small>
-              <strong>0</strong>
+              <strong>{quantidadePorStatus("RESOLVED")}</strong>
               <p>Finalizados com sucesso</p>
             </div>
           </article>
@@ -61,6 +126,8 @@ export default function HomePage() {
                 type="search"
                 placeholder="Buscar por assunto ou protocolo"
                 aria-label="Buscar chamados"
+                value={busca}
+                onChange={(evento) => definirBusca(evento.target.value)}
               />
             </label>
           </div>
@@ -70,25 +137,51 @@ export default function HomePage() {
             role="tablist"
             aria-label="Filtrar chamados"
           >
-            {filters.map((filter, index) => (
+            {filtros.map((filtro) => (
               <button
-                className={index === 0 ? "active" : ""}
-                key={filter}
+                className={filtroAtivo === filtro.status ? "active" : ""}
+                key={filtro.status}
                 type="button"
+                onClick={() => definirFiltroAtivo(filtro.status)}
               >
-                {filter} <span>0</span>
+                {filtro.rotulo}{" "}
+                <span>{quantidadePorStatus(filtro.status)}</span>
               </button>
             ))}
           </div>
 
-          <div className="empty-state user-empty-state">
-            <span className="empty-icon">▤</span>
-            <h3>Você ainda não possui chamados</h3>
-            <p>Quando uma solicitação for aberta, ela aparecerá nesta lista.</p>
-            <Link className="primary-button" href="/tickets/new">
-              Abrir primeiro chamado
-            </Link>
-          </div>
+          {erro ? (
+            <p className="form-message form-message-error">{erro}</p>
+          ) : carregando ? (
+            <div className="empty-state user-empty-state">
+              <p>Carregando chamados...</p>
+            </div>
+          ) : chamadosFiltrados.length ? (
+            <div className="ticket-list">
+              {chamadosFiltrados.map((chamado) => (
+                <TicketCard key={chamado.id} ticket={chamado} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state user-empty-state">
+              <span className="empty-icon">▤</span>
+              <h3>
+                {chamados.length
+                  ? "Nenhum chamado encontrado"
+                  : "Você ainda não possui chamados"}
+              </h3>
+              <p>
+                {chamados.length
+                  ? "Tente alterar a busca ou o filtro selecionado."
+                  : "Quando uma solicitação for aberta, ela aparecerá nesta lista."}
+              </p>
+              {!chamados.length ? (
+                <Link className="primary-button" href="/tickets/new">
+                  Abrir primeiro chamado
+                </Link>
+              ) : null}
+            </div>
+          )}
         </section>
       </Header>
     </>

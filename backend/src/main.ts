@@ -1,24 +1,24 @@
 import 'dotenv/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { ModuloPrincipal } from './modulo-principal';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+async function iniciarAplicacao() {
+  const aplicacao = await NestFactory.create(ModuloPrincipal);
 
-  app.setGlobalPrefix('api');
-  app.useGlobalPipes(
+  aplicacao.setGlobalPrefix('api');
+  aplicacao.useGlobalPipes(
     new ValidationPipe({
       forbidNonWhitelisted: true,
       transform: true,
       whitelist: true,
     }),
   );
-  app.enableCors({
+  aplicacao.enableCors({
     origin: process.env.FRONTEND_URL ?? 'http://localhost:3002',
   });
 
-  await app.listen(process.env.PORT ?? 3001);
+  await aplicacao.listen(process.env.PORT ?? 3001);
 }
 
-void bootstrap();
+void iniciarAplicacao();

@@ -1,8 +1,56 @@
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Header } from "@/components/Header";
+import { apiRequest } from "@/lib/api";
+import type { Ticket } from "@/lib/types";
+
+const TAMANHO_MAXIMO_ANEXO = 5 * 1024 * 1024;
 
 export default function NewTicketPage() {
+  const roteador = useRouter();
+  const [nomeAnexo, definirNomeAnexo] = useState("");
+  const [erro, definirErro] = useState("");
+  const [enviando, definirEnviando] = useState(false);
+
+  function selecionarAnexo(evento: ChangeEvent<HTMLInputElement>) {
+    const arquivo = evento.target.files?.[0];
+    definirErro("");
+
+    if (arquivo && arquivo.size > TAMANHO_MAXIMO_ANEXO) {
+      evento.target.value = "";
+      definirNomeAnexo("");
+      definirErro("O anexo deve ter no máximo 5 MB.");
+      return;
+    }
+
+    definirNomeAnexo(arquivo?.name ?? "");
+  }
+
+  async function enviarChamado(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    definirErro("");
+    definirEnviando(true);
+
+    try {
+      const chamado = await apiRequest<Ticket>("/chamados", {
+        method: "POST",
+        body: new FormData(evento.currentTarget),
+      });
+
+      await roteador.push(`/home?chamadoCriado=${chamado.sequenceNumber}`);
+    } catch (erroEnvio) {
+      definirErro(
+        erroEnvio instanceof Error
+          ? erroEnvio.message
+          : "Não foi possível enviar o chamado.",
+      );
+    } finally {
+      definirEnviando(false);
+    }
+  }
+
   return (
     <>
       <Head>
@@ -20,7 +68,7 @@ export default function NewTicketPage() {
         </section>
 
         <div className="ticket-form-layout">
-          <form className="ticket-form">
+          <form className="ticket-form" onSubmit={enviarChamado}>
             <div className="form-section-heading">
               <span>1</span>
               <div>
@@ -32,7 +80,8 @@ export default function NewTicketPage() {
             <label>
               Assunto
               <input
-                name="subject"
+                name="assunto"
+                minLength={3}
                 maxLength={150}
                 placeholder="Resuma o problema em uma frase"
                 required
@@ -43,8 +92,10 @@ export default function NewTicketPage() {
             <label>
               Descrição do problema
               <textarea
-                name="description"
+                name="descricao"
                 rows={7}
+                minLength={10}
+                maxLength={5000}
                 placeholder="Descreva o que aconteceu, quando começou e o que você já tentou fazer..."
                 required
               />
@@ -52,7 +103,7 @@ export default function NewTicketPage() {
 
             <label>
               Nível de urgência
-              <select name="urgency" defaultValue="MEDIUM">
+              <select name="urgencia" defaultValue="MEDIUM">
                 <option value="LOW">Baixa</option>
                 <option value="MEDIUM">Média</option>
                 <option value="HIGH">Alta</option>
@@ -63,24 +114,33 @@ export default function NewTicketPage() {
             <label className="upload-field">
               <input
                 type="file"
-                name="attachment"
+                name="anexo"
                 accept=".pdf,.png,.jpg,.jpeg"
+                onChange={selecionarAnexo}
               />
               <span className="upload-icon">⇧</span>
-              <strong>Arraste um arquivo ou clique para selecionar</strong>
-              <small>PNG, JPG ou PDF</small>
+              <strong>{nomeAnexo || "Anexe um arquivo, se necessário"}</strong>
+              <small>
+                {nomeAnexo
+                  ? "Arquivo selecionado · clique para trocar"
+                  : "Opcional · PNG, JPG ou PDF · máximo de 5 MB"}
+              </small>
             </label>
 
-            <p className="integration-notice">
-              O envio será habilitado quando a API de chamados estiver pronta.
-            </p>
+            {erro ? (
+              <p className="form-message form-message-error">{erro}</p>
+            ) : null}
 
             <div className="form-actions">
               <Link className="secondary-button" href="/home">
                 Cancelar
               </Link>
-              <button className="primary-button" type="button" disabled>
-                Enviar chamado <span>→</span>
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={enviando}
+              >
+                {enviando ? "Enviando..." : "Enviar chamado"} <span>→</span>
               </button>
             </div>
           </form>

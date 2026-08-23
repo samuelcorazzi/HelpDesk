@@ -21,6 +21,7 @@ coverage/
 
 # Caches, logs e arquivos temporários
 .cache/
+.helpdesk-processos
 .eslintcache
 *.log
 npm-debug.log*

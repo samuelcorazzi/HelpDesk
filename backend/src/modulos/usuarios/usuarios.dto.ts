@@ -8,9 +8,9 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { Role } from '../generated/prisma/enums';
+import { Role } from '../../generated/prisma/enums';
 
-export class CreateUserDto {
+export class CriarUsuarioDto {
   @IsString()
   @Length(2, 120)
   name!: string;
@@ -29,7 +29,7 @@ export class CreateUserDto {
   role?: Role;
 }
 
-export class UpdateUserDto {
+export class AtualizarUsuarioDto {
   @IsOptional()
   @IsString()
   @Length(2, 120)
@@ -51,7 +51,7 @@ export class UpdateUserDto {
   role?: Role;
 }
 
-export class UpdateUserStatusDto {
+export class AtualizarStatusUsuarioDto {
   @IsBoolean()
   active!: boolean;
 }

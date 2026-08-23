@@ -8,6 +8,8 @@ export interface User {
   email: string;
   role: Role;
   active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LoginResponse {
@@ -23,6 +25,15 @@ export interface Ticket {
   urgency: Urgency;
   status: TicketStatus;
   user?: Pick<User, "id" | "name" | "email">;
+  attachments?: Attachment[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Attachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
 }

@@ -36,12 +36,30 @@ model User {
   role         Role    @default(USER)
   active       Boolean @default(true)
 
-  tickets Ticket[]
+  tickets        Ticket[]
+  registrosLogin RegistroLogin[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([active])
+}
+
+model RegistroLogin {
+  id             String   @id @default(uuid()) @db.Uuid
+  usuarioId      String?  @db.Uuid
+  emailInformado String   @db.VarChar(180)
+  sucesso        Boolean
+  enderecoIp     String?  @db.VarChar(64)
+  agenteUsuario  String?  @db.VarChar(500)
+  motivoFalha    String?  @db.VarChar(120)
+  criadoEm       DateTime @default(now())
+
+  usuario User? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@index([criadoEm])
+  @@map("registros_login")
 }
 
 model Ticket {
