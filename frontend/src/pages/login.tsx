@@ -2,6 +2,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { apiRequest } from "@/lib/api";
 import type { LoginResponse } from "@/lib/types";
 
@@ -153,6 +154,7 @@ export default function LoginPage() {
             <p className="login-help">
               Não possui acesso? <strong>Fale com o administrador.</strong>
             </p>
+            <ConnectionStatus />
           </div>
         </section>
       </main>

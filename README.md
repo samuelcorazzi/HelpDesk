@@ -283,6 +283,14 @@ Não edite manualmente a tabela `_prisma_migrations` no Supabase.
 
 ## API disponível
 
+### Status da conexão
+
+| Método | Endpoint      | Acesso  | Finalidade                                 |
+| ------ | ------------- | ------- | ------------------------------------------ |
+| `GET`  | `/api/status` | Público | Verificar servidor e banco sem expor dados |
+
+O frontend atualiza esse status automaticamente a cada 30 segundos. Também é possível clicar no indicador para verificar novamente.
+
 ### Autenticação
 
 | Método | Endpoint          | Acesso      | Finalidade                |

@@ -576,6 +576,84 @@ textarea {
   margin-top: auto;
 }
 
+.connection-status {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted);
+  padding: 9px 11px;
+  font-size: 9px;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar .connection-status {
+  margin-top: 12px;
+}
+
+.sidebar-nav + .connection-status {
+  margin-top: auto;
+}
+
+.login-card > .connection-status {
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.connection-status:hover {
+  border-color: #b9c5df;
+}
+
+.connection-status:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #98a2b3;
+  box-shadow: 0 0 0 3px rgb(152 162 179 / 14%);
+}
+
+.connection-online .connection-dot {
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgb(21 148 108 / 14%);
+}
+
+.connection-offline .connection-dot {
+  background: #d92d20;
+  box-shadow: 0 0 0 3px rgb(217 45 32 / 14%);
+}
+
+.connection-checking .connection-dot {
+  animation: connection-pulse 1.2s ease-in-out infinite;
+}
+
+.connection-compact {
+  display: grid;
+  width: 34px;
+  min-height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  padding: 0;
+}
+
+@keyframes connection-pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
 .user-avatar {
   display: grid;
   width: 36px;

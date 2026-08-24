@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import type { User } from "@/lib/types";
 
 type AreaAplicacao = "user" | "admin";
@@ -146,6 +147,7 @@ export function Header({ children, area = "user" }: HeaderProps) {
           </div>
         ) : null}
 
+        <ConnectionStatus />
         <ThemeToggle className="sidebar-theme-toggle" showLabel />
 
         <div className="sidebar-user">
@@ -174,6 +176,7 @@ export function Header({ children, area = "user" }: HeaderProps) {
             <span className="brand-mark">H</span> HelpDesk
           </Link>
           <div className="mobile-topbar-actions">
+            <ConnectionStatus compacto />
             <ThemeToggle />
             <button className="logout-button" type="button" onClick={logout}>
               Sair

@@ -1,5 +1,12 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
+export interface StatusConexao {
+  servidorConectado: boolean;
+  bancoConectado: boolean;
+  verificadoEm: string;
+  tempoRespostaMs?: number;
+}
+
 async function obterMensagemErro(response: Response) {
   const errorBody = (await response.json().catch(() => null)) as {
     message?: string | string[];
@@ -59,4 +66,24 @@ export async function baixarArquivoApi(path: string, nomeArquivo: string) {
   link.click();
   link.remove();
   URL.revokeObjectURL(enderecoTemporario);
+}
+
+export async function consultarStatusApi(): Promise<StatusConexao> {
+  try {
+    const response = await fetch(`${API_URL}/status`, { cache: "no-store" });
+    const corpo = (await response.json()) as Partial<StatusConexao>;
+
+    return {
+      servidorConectado: corpo.servidorConectado === true,
+      bancoConectado: corpo.bancoConectado === true,
+      verificadoEm: corpo.verificadoEm ?? new Date().toISOString(),
+      tempoRespostaMs: corpo.tempoRespostaMs,
+    };
+  } catch {
+    return {
+      servidorConectado: false,
+      bancoConectado: false,
+      verificadoEm: new Date().toISOString(),
+    };
+  }
 }

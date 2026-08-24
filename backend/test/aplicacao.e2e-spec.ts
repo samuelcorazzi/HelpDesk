@@ -243,6 +243,9 @@ describe('API HelpDesk (ponta a ponta)', () => {
         onModuleDestroy: jest.fn(),
         user: {
           findUnique: buscarUsuario,
+          findFirst: jest.fn().mockResolvedValue({
+            id: usuarioAdministrador.id,
+          }),
           findMany: jest.fn().mockResolvedValue([usuarioAdministrador]),
           create: criarUsuario,
         },
@@ -302,6 +305,18 @@ describe('API HelpDesk (ponta a ponta)', () => {
       sucesso: true,
     });
     expect(ultimoRegistroLogin).not.toHaveProperty('password');
+  });
+
+  it('/api/status confirma servidor e banco conectados', () => {
+    return request(aplicacao.getHttpServer())
+      .get('/api/status')
+      .expect(200)
+      .expect((resposta) => {
+        expect(resposta.body).toMatchObject({
+          servidorConectado: true,
+          bancoConectado: true,
+        });
+      });
   });
 
   it('/api/auth/login rejeita e registra uma senha inválida', async () => {
