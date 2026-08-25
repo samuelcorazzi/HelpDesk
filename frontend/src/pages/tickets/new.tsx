@@ -1,5 +1,6 @@
+// Esta página cuida do primeiro passo do chamado: reúne o que o usuário digitou
+// e envia os dados, junto com o anexo opcional, para a API.
 import Head from "next/head";
-// Formulário de abertura de chamado com upload opcional em multipart/form-data.
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type ChangeEvent, type FormEvent } from "react";
@@ -8,8 +9,8 @@ import { apiRequest } from "@/lib/api";
 import type { Ticket } from "@/lib/types";
 
 const TAMANHO_MAXIMO_ANEXO = 5 * 1024 * 1024;
-// Esta validação melhora a experiência, mas pode ser burlada no navegador. O
-// backend repete obrigatoriamente o limite e a conferência do tipo do arquivo.
+// Conferir o tamanho aqui permite avisar o usuário antes do envio. O backend
+// confere novamente porque qualquer validação do navegador pode ser contornada.
 
 export default function NewTicketPage() {
   const roteador = useRouter();
@@ -22,7 +23,8 @@ export default function NewTicketPage() {
     definirErro("");
 
     if (arquivo && arquivo.size > TAMANHO_MAXIMO_ANEXO) {
-      // Limpar value permite que o mesmo arquivo seja selecionado novamente depois.
+      // Também limpamos o campo para que o navegador perceba caso o usuário
+      // corrija o arquivo e tente selecionar o mesmo nome novamente.
       evento.target.value = "";
       definirNomeAnexo("");
       definirErro("O anexo deve ter no máximo 5 MB.");
@@ -32,21 +34,24 @@ export default function NewTicketPage() {
     definirNomeAnexo(arquivo?.name ?? "");
   }
 
-  // O envio do formulário chama esta função sem recarregar a página.
+  // O formulário é enviado pela própria página para que seja possível mostrar
+  // carregamento, sucesso ou erro sem perder tudo o que já estava na tela.
   async function enviarChamado(evento: FormEvent<HTMLFormElement>) {
+    // Sem preventDefault, o navegador recarregaria a página ao enviar o formulário.
     evento.preventDefault();
     definirErro("");
     definirEnviando(true);
 
     try {
-      // FormData reúne os campos e o arquivo para enviá-los ao controller de
-      // chamados. O navegador define automaticamente o Content-Type correto.
+      // FormData junta os campos de texto e o arquivo no mesmo envio. O navegador
+      // prepara automaticamente o formato que o controller espera receber.
       const chamado = await apiRequest<Ticket>("/chamados", {
         method: "POST",
         body: new FormData(evento.currentTarget),
       });
 
-      // Depois do sucesso, /home recebe o número e o exibe como.
+      // O protocolo volta na resposta e segue pela URL para a tela inicial mostrar
+      // qual chamado acabou de ser criado.
       await roteador.push(`/home?chamadoCriado=${chamado.sequenceNumber}`);
     } catch (erroEnvio) {
       definirErro(

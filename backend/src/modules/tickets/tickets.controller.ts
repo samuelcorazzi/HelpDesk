@@ -1,5 +1,6 @@
+// O controller é a porta de entrada dos chamados: recebe a requisição, organiza
+// os dados e chama o service, onde ficam as regras do sistema.
 import {
-  // Rotas autenticadas para abrir, consultar, atender e baixar chamados.
   Body,
   Controller,
   Get,
@@ -34,8 +35,8 @@ import { configuracaoUploadAnexo } from './upload.config';
 @Controller('chamados')
 @UseGuards(JwtAuthGuard)
 export class TicketsController {
-  // Todas as rotas desta classe exigem login. Restrições adicionais, como ser
-  // ADMIN para alterar status, são declaradas diretamente no método.
+  // Como o JwtAuthGuard está na classe, ninguém acessa estas rotas sem login.
+  // Quando uma ação exige algo a mais, como ser administrador, ela avisa no método.
   constructor(private readonly servicoChamados: TicketsService) {}
 
   @Post()
@@ -45,8 +46,8 @@ export class TicketsController {
     @UploadedFile() anexo: Express.Multer.File | undefined,
     @Body() dadosChamado: CreateTicketDto,
   ) {
-    // FileInterceptor separa o arquivo do multipart/form-data; os demais campos
-    // seguem para CreateTicketDto e são validados normalmente.
+    // O interceptor separa o anexo dos campos de texto. Depois disso, o DTO valida
+    // assunto, descrição e urgência antes de o service tentar criar o chamado.
     return this.servicoChamados.criar(requisicao.user, dadosChamado, anexo);
   }
 
@@ -60,7 +61,8 @@ export class TicketsController {
     @Req() requisicao: RequisicaoAutenticada,
     @Param('id', new ParseUUIDPipe()) identificador: string,
   ) {
-    // ParseUUIDPipe rejeita um id malformado antes de consultar o banco.
+    // Esta validação evita consultar o banco quando o ID da URL nem sequer tem o
+    // formato usado pelos chamados.
     return this.servicoChamados.buscarPorId(requisicao.user, identificador);
   }
 
@@ -71,8 +73,8 @@ export class TicketsController {
     @Param('id', new ParseUUIDPipe()) identificador: string,
     @Body() dadosStatus: UpdateTicketStatusDto,
   ) {
-    // Embora todo usuário autenticado possa ver seus chamados, somente ADMIN
-    // chega a esta operação de mudança de estado.
+    // Ver os próprios chamados exige apenas login. Alterar o andamento deles é uma
+    // ação administrativa, por isso esta rota também passa pelo RolesGuard.
     return this.servicoChamados.atualizarStatus(
       identificador,
       dadosStatus.status,
@@ -100,8 +102,8 @@ export class TicketsController {
     @Param('anexoId', new ParseUUIDPipe()) identificadorAnexo: string,
     @Res({ passthrough: true }) resposta: Response,
   ) {
-    // O serviço confirma simultaneamente a existência e a permissão de acesso.
-    // Só depois disso o controlador cria o fluxo de download do arquivo.
+    // Antes de iniciar o download, o service confirma se o anexo existe e se este
+    // usuário pode acessar o chamado ao qual ele pertence.
     const anexo = await this.servicoChamados.obterAnexo(
       requisicao.user,
       identificadorChamado,
@@ -109,14 +111,15 @@ export class TicketsController {
     );
 
     resposta.setHeader('Content-Type', anexo.mimeType);
-    // "attachment" orienta o navegador a baixar em vez de exibir; filename*
-    // preserva acentos e outros caracteres UTF-8 no nome original.
+    // Este cabeçalho pede ao navegador para baixar o arquivo e mantém o nome
+    // original, inclusive quando ele possui acentos.
     resposta.setHeader(
       'Content-Disposition',
       `attachment; filename*=UTF-8''${encodeURIComponent(anexo.fileName)}`,
     );
 
-    // Stream evita carregar o arquivo inteiro novamente na memória da API.
+    // O arquivo é enviado aos poucos. Assim a API não precisa carregá-lo inteiro
+    // na memória antes de começar o download.
     return new StreamableFile(createReadStream(anexo.caminhoAbsoluto));
   }
 }

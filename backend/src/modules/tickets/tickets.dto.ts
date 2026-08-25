@@ -1,11 +1,12 @@
+// Os DTOs descrevem o que cada rota aceita e barram dados inválidos antes que eles
+// cheguem às regras do service.
 import { Transform } from 'class-transformer';
-// Contratos validados para criação, mudança de status e mensagens do chamado.
 import { IsEnum, IsString, Length } from 'class-validator';
 import { TicketStatus, Urgency } from '../../generated/prisma/enums';
 
 export class CreateTicketDto {
-  // Os nomes em português correspondem exatamente aos atributos name do
-  // formulário do frontend enviado em multipart/form-data.
+  // Estes nomes são os mesmos usados no formulário de criação. Assim cada campo
+  // enviado pelo frontend encontra diretamente sua validação no backend.
   @IsString()
   @Length(3, 150)
   assunto!: string;
@@ -19,14 +20,15 @@ export class CreateTicketDto {
 }
 
 export class UpdateTicketStatusDto {
-  // @IsEnum impede gravar qualquer texto fora dos três estados do Prisma.
+  // O status precisa ser um dos valores conhecidos pelo sistema. Um texto
+  // inventado, como "FINALIZANDO", é rejeitado antes de chegar ao banco.
   @IsEnum(TicketStatus)
   status!: TicketStatus;
 }
 
 export class SendTicketMessageDto {
-  // O Transform remove espaços nas pontas antes de @Length validar. Desse modo,
-  // uma mensagem formada somente por espaços é tratada como vazia.
+  // Primeiro retiramos os espaços das pontas e só depois validamos o tamanho. Com
+  // isso, uma mensagem contendo apenas espaços é considerada vazia.
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
