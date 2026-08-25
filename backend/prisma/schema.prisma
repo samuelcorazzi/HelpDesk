@@ -1,0 +1,124 @@
+generator client {
+  // Gera o cliente tipado dentro de src para uso pelo NestJS.
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
+  importFileExtension    = ""
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  // Conta autenticável; passwordHash nunca deve ser exposto pela API.
+  id           String  @id @default(uuid()) @db.Uuid
+  name         String  @db.VarChar(120)
+  email        String  @unique @db.VarChar(180)
+  passwordHash String  @db.VarChar(255)
+  role         Role    @default(USER)
+  active       Boolean @default(true)
+
+  tickets        Ticket[]
+  registrosLogin RegistroLogin[]
+  mensagens      MensagemChamado[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+}
+
+model RegistroLogin {
+  // Auditoria sem persistir a senha informada.
+  id             String   @id @default(uuid()) @db.Uuid
+  usuarioId      String?  @db.Uuid
+  emailInformado String   @db.VarChar(180)
+  sucesso        Boolean
+  enderecoIp     String?  @db.VarChar(64)
+  agenteUsuario  String?  @db.VarChar(500)
+  motivoFalha    String?  @db.VarChar(120)
+  criadoEm       DateTime @default(now())
+
+  usuario User? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@index([criadoEm])
+  @@map("registros_login")
+}
+
+model Ticket {
+  // Chamado aberto por um usuário e identificado por protocolo sequencial.
+  id             String       @id @default(uuid()) @db.Uuid
+  sequenceNumber Int          @unique @default(autoincrement())
+  subject        String       @db.VarChar(150)
+  description    String
+  urgency        Urgency
+  status         TicketStatus @default(OPEN)
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  attachments Attachment[]
+  mensagens   MensagemChamado[]
+
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Attachment {
+  // Metadados do arquivo; o conteúdo fica no armazenamento local/externo.
+  id          String @id @default(uuid()) @db.Uuid
+  fileName    String @db.VarChar(255)
+  storagePath String @unique
+  mimeType    String @db.VarChar(120)
+  size        Int
+
+  ticketId String @db.Uuid
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model MensagemChamado {
+  // Mensagem cronológica trocada entre o dono e a equipe de atendimento.
+  id       String @id @default(uuid()) @db.Uuid
+  conteudo String
+
+  chamadoId String @db.Uuid
+  chamado   Ticket @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+
+  autorId String @db.Uuid
+  autor   User   @relation(fields: [autorId], references: [id])
+
+  criadoEm DateTime @default(now())
+
+  @@index([chamadoId, criadoEm])
+  @@index([autorId])
+  @@map("mensagens_chamado")
+}

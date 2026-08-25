@@ -1,0 +1,66 @@
+# Dependências
+node_modules/
+.pnp/
+.pnp.*
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Builds e arquivos gerados
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+**/src/generated/prisma/
+.turbo/
+.vercel/
+
+# Caches, logs e arquivos temporários
+.cache/
+.helpdesk-processos
+.eslintcache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# Arquivos auxiliares gerados pelo Prisma para agentes
+**/.agents/
+**/.claude/
+**/.windsurf/
+**/skills-lock.json
+
+# Estrutura antiga e arquivos compactados
+backend-vazio/
+*.zip
+*.rar
+*.7z
+
+# Editores
+.vscode/
+.idea/
+.history/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Relatórios locais
+coverage-final.json
+junit.xml
+
+# Arquivos locais de upload durante o desenvolvimento
+uploads/
