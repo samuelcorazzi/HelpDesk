@@ -29,7 +29,7 @@ export interface Ticket {
   status: TicketStatus;
   // Pick reaproveita somente a parte pública de User devolvida dentro do chamado.
   // As interrogações indicam relações que nem toda resposta precisa incluir.
-  user?: Pick<User, "id" | "name" | "email">;
+  user?: Pick<User, "name" | "email">;
   attachments?: Attachment[];
   mensagens?: MensagemChamado[];
   createdAt: string;
@@ -40,13 +40,11 @@ export interface MensagemChamado {
   id: string;
   conteudo: string;
   criadoEm: string;
-  autor: Pick<User, "id" | "name" | "role">;
+  autor: Pick<User, "name" | "role">;
 }
 
 export interface Attachment {
   id: string;
   fileName: string;
-  mimeType: string;
   size: number;
-  createdAt: string;
 }

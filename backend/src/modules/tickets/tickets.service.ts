@@ -18,7 +18,6 @@ const selecaoMensagemPublica = {
   criadoEm: true,
   autor: {
     select: {
-      id: true,
       name: true,
       role: true,
     },
@@ -34,12 +33,10 @@ const selecaoChamadoPublico = {
   description: true,
   urgency: true,
   status: true,
-  resolvedAt: true,
   createdAt: true,
   updatedAt: true,
   user: {
     select: {
-      id: true,
       name: true,
       email: true,
     },
@@ -48,9 +45,7 @@ const selecaoChamadoPublico = {
     select: {
       id: true,
       fileName: true,
-      mimeType: true,
       size: true,
-      createdAt: true,
     },
   },
 } satisfies Prisma.TicketSelect;
