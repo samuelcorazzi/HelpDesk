@@ -46,7 +46,7 @@ export default function NewTicketPage() {
         body: new FormData(evento.currentTarget),
       });
 
-      // Depois do sucesso, /home recebe o número e o exibe como HD-000001.
+      // Depois do sucesso, /home recebe o número e o exibe como.
       await roteador.push(`/home?chamadoCriado=${chamado.sequenceNumber}`);
     } catch (erroEnvio) {
       definirErro(
