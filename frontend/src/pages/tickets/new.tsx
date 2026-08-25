@@ -1,6 +1,6 @@
-// Esta página cuida do primeiro passo do chamado: reúne o que o usuário digitou
-// e envia os dados, junto com o anexo opcional, para a API.
 import Head from "next/head";
+// Formulário de abertura de chamado pelo usuario, upload aqui é opcional
+// imports abaixo, permitem usar algo criado em outro arquivo etc...
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type ChangeEvent, type FormEvent } from "react";
@@ -9,49 +9,48 @@ import { apiRequest } from "@/lib/api";
 import type { Ticket } from "@/lib/types";
 
 const TAMANHO_MAXIMO_ANEXO = 5 * 1024 * 1024;
-// Conferir o tamanho aqui permite avisar o usuário antes do envio. O backend
-// confere novamente porque qualquer validação do navegador pode ser contornada.
+
+//pagina inteira de criação do chamado
 
 export default function NewTicketPage() {
-  const roteador = useRouter();
-  const [nomeAnexo, definirNomeAnexo] = useState("");
+  const roteador = useRouter(); //router permite trocar de pagina pelo codigo
+  const [nomeAnexo, definirNomeAnexo] = useState(""); //informação muda enquanto tela esta aberta, devolve valor atual e funcao pra mudar
   const [erro, definirErro] = useState("");
-  const [enviando, definirEnviando] = useState(false);
+  const [enviando, definirEnviando] = useState(false); //envio inicia quando usuario clica no botao de enviar
 
   function selecionarAnexo(evento: ChangeEvent<HTMLInputElement>) {
-    const arquivo = evento.target.files?.[0];
+    const arquivo = evento.target.files?.[0]; //registro de algo que ocorreu na tela , codigo nao quebra se prosseguir sem nenhum arquivo selecionado
     definirErro("");
 
     if (arquivo && arquivo.size > TAMANHO_MAXIMO_ANEXO) {
-      // Também limpamos o campo para que o navegador perceba caso o usuário
-      // corrija o arquivo e tente selecionar o mesmo nome novamente.
+      // Limpar value permite que o mesmo arquivo seja selecionado novamente depois.
       evento.target.value = "";
       definirNomeAnexo("");
       definirErro("O anexo deve ter no máximo 5 MB.");
       return;
     }
 
-    definirNomeAnexo(arquivo?.name ?? "");
+    definirNomeAnexo(arquivo?.name ?? ""); //
   }
 
-  // O formulário é enviado pela própria página para que seja possível mostrar
-  // carregamento, sucesso ou erro sem perder tudo o que já estava na tela.
+  // O envio do formulário chama esta função sem recarregar a página
   async function enviarChamado(evento: FormEvent<HTMLFormElement>) {
-    // Sem preventDefault, o navegador recarregaria a página ao enviar o formulário.
-    evento.preventDefault();
+    evento.preventDefault(); //evita que o sistema recarrega a pagina devido a demora
     definirErro("");
-    definirEnviando(true);
+    definirEnviando(true); //prepara a tela antes da requisicao
 
     try {
-      // FormData junta os campos de texto e o arquivo no mesmo envio. O navegador
-      // prepara automaticamente o formato que o controller espera receber.
+      // FormData reune os campos e o arquivo para envia-los ao controller de
+      // chamados. o navegador define automaticamente o tipo de conteúdo correto.
       const chamado = await apiRequest<Ticket>("/chamados", {
-        method: "POST",
+        method: "POST", //criar um novo chamado com esses dados
         body: new FormData(evento.currentTarget),
       });
 
-      // O protocolo volta na resposta e segue pela URL para a tela inicial mostrar
-      // qual chamado acabou de ser criado.
+      // Depois da confirmação, /home recebe o número e o exibe como.
+
+      // Redireciona o usuário para a página inicial e envia o protocolo pela URL
+      // para que a mensagem de chamado criado seja exibida.
       await roteador.push(`/home?chamadoCriado=${chamado.sequenceNumber}`);
     } catch (erroEnvio) {
       definirErro(

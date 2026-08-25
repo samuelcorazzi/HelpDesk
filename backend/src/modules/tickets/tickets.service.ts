@@ -26,8 +26,7 @@ const selecaoMensagemPublica = {
 } satisfies Prisma.MensagemChamadoSelect;
 
 const selecaoChamadoPublico = {
-  // Este é o formato comum enviado para o frontend. Centralizar a seleção evita
-  // que cada rota devolva campos diferentes ou informações que a tela não usa.
+  // devolve os dados do chamado, o usuário que abriu e os anexos, mas não a conversa.
   id: true,
   sequenceNumber: true,
   subject: true,
@@ -49,7 +48,7 @@ const selecaoChamadoPublico = {
       size: true,
     },
   },
-} satisfies Prisma.TicketSelect;
+} satisfies Prisma.TicketSelect; //verifica se o objeto tem a forma correta para ser usado na consulta do Prisma, se nao tiver, da erro de compilação
 
 const selecaoChamadoDetalhado = {
   // Na página de detalhes usamos os mesmos dados e acrescentamos a conversa,
@@ -63,7 +62,7 @@ const selecaoChamadoDetalhado = {
 
 @Injectable()
 export class TicketsService {
-  constructor(private readonly bancoDeDados: PrismaService) {}
+  constructor(private readonly bancoDeDados: PrismaService) {} //
 
   async criar(
     usuario: UsuarioAutenticado,

@@ -32,15 +32,13 @@ import {
 import { TicketsService } from './tickets.service';
 import { configuracaoUploadAnexo } from './upload.config';
 
-@Controller('chamados')
-@UseGuards(JwtAuthGuard)
+@Controller('chamados') //todas  rotas iniciam com /chamados
+@UseGuards(JwtAuthGuard) // O JwtAuthGuard exige que o usuário esteja logado para acessar qualquer rota, sem acesso na rota pra quem nao tem login
 export class TicketsController {
-  // Como o JwtAuthGuard está na classe, ninguém acessa estas rotas sem login.
-  // Quando uma ação exige algo a mais, como ser administrador, ela avisa no método.
   constructor(private readonly servicoChamados: TicketsService) {}
 
-  @Post()
-  @UseInterceptors(FileInterceptor('anexo', configuracaoUploadAnexo))
+  @Post() //post/chamados
+  @UseInterceptors(FileInterceptor('anexo', configuracaoUploadAnexo)) //aplica config de upload
   criar(
     @Req() requisicao: RequisicaoAutenticada,
     @UploadedFile() anexo: Express.Multer.File | undefined,
@@ -53,21 +51,21 @@ export class TicketsController {
 
   @Get()
   listar(@Req() requisicao: RequisicaoAutenticada) {
-    return this.servicoChamados.listar(requisicao.user);
+    return this.servicoChamados.listar(requisicao.user); // Lista os chamados do usuário
   }
 
-  @Get(':id')
+  @Get(':id') //get/chamados/:id
   buscarPorId(
     @Req() requisicao: RequisicaoAutenticada,
-    @Param('id', new ParseUUIDPipe()) identificador: string,
+    @Param('id', new ParseUUIDPipe()) identificador: string, //receber o texto da URL e validar se é um UUID (formato usado pelo banco), se nao for, retorna erro 400.
   ) {
     // Esta validação evita consultar o banco quando o ID da URL nem sequer tem o
     // formato usado pelos chamados.
     return this.servicoChamados.buscarPorId(requisicao.user, identificador);
   }
 
-  @Patch(':id/status')
-  @UseGuards(RolesGuard)
+  @Patch(':id/status') //somente alteração de status
+  @UseGuards(RolesGuard) //confirma que user é administrador antes de permitir alterar status do chamado
   @Roles(Role.ADMIN)
   atualizarStatus(
     @Param('id', new ParseUUIDPipe()) identificador: string,
@@ -81,13 +79,14 @@ export class TicketsController {
     );
   }
 
-  @Post(':id/mensagens')
+  @Post(':id/mensagens') //cria mensagem dentro do chamado, sem alterar status
   enviarMensagem(
     @Req() requisicao: RequisicaoAutenticada,
     @Param('id', new ParseUUIDPipe()) identificador: string,
     @Body() dadosMensagem: SendTicketMessageDto,
   ) {
     return this.servicoChamados.enviarMensagem(
+      //verifica se a pessoa realmente tem acesso ao chamado antes de permitir enviar a mensagem
       requisicao.user,
       identificador,
       dadosMensagem,
