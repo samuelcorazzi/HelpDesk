@@ -29,17 +29,20 @@ export default function NewTicketPage() {
     definirNomeAnexo(arquivo?.name ?? "");
   }
 
+  //Envia o chamado quando onSubmit é chamado
   async function enviarChamado(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     definirErro("");
     definirEnviando(true);
 
+    //envia os dados para o Controlador dos chamados
     try {
       const chamado = await apiRequest<Ticket>("/chamados", {
         method: "POST",
         body: new FormData(evento.currentTarget),
       });
 
+      //Em caso de sucesso, redireciona o usuário para a página de início /home passando o número do chamado gerado na URL
       await roteador.push(`/home?chamadoCriado=${chamado.sequenceNumber}`);
     } catch (erroEnvio) {
       definirErro(
