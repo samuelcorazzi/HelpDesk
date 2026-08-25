@@ -19,30 +19,34 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { createReadStream } from 'node:fs';
 import type { Response } from 'express';
 import { Role } from '../../generated/prisma/enums';
-import type { RequisicaoAutenticada } from '../autenticacao/autenticacao.tipos';
-import { GuardaAutenticacaoJwt } from '../autenticacao/guarda-autenticacao-jwt';
-import { GuardaPapeis } from '../autenticacao/guarda-papeis';
-import { PapeisPermitidos } from '../autenticacao/papeis.decorador';
+import type { RequisicaoAutenticada } from '../auth/auth.types';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles';
+import { RolesGuard } from '../auth/roles.guard';
 import {
-  AtualizarStatusChamadoDto,
-  CriarChamadoDto,
-  EnviarMensagemChamadoDto,
-} from './chamados.dto';
-import { ServicoChamados } from './chamados.servico';
-import { configuracaoUploadAnexo } from './configuracao-upload';
+  CreateTicketDto,
+  SendTicketMessageDto,
+  UpdateTicketStatusDto,
+} from './tickets.dto';
+import { TicketsService } from './tickets.service';
+import { configuracaoUploadAnexo } from './upload.config';
 
 @Controller('chamados')
-@UseGuards(GuardaAutenticacaoJwt)
-export class ControladorChamados {
-  constructor(private readonly servicoChamados: ServicoChamados) {}
+@UseGuards(JwtAuthGuard)
+export class TicketsController {
+  // Todas as rotas desta classe exigem login. Restrições adicionais, como ser
+  // ADMIN para alterar status, são declaradas diretamente no método.
+  constructor(private readonly servicoChamados: TicketsService) {}
 
   @Post()
   @UseInterceptors(FileInterceptor('anexo', configuracaoUploadAnexo))
   criar(
     @Req() requisicao: RequisicaoAutenticada,
     @UploadedFile() anexo: Express.Multer.File | undefined,
-    @Body() dadosChamado: CriarChamadoDto,
+    @Body() dadosChamado: CreateTicketDto,
   ) {
+    // FileInterceptor separa o arquivo do multipart/form-data; os demais campos
+    // seguem para CreateTicketDto e são validados normalmente.
     return this.servicoChamados.criar(requisicao.user, dadosChamado, anexo);
   }
 
@@ -56,16 +60,19 @@ export class ControladorChamados {
     @Req() requisicao: RequisicaoAutenticada,
     @Param('id', new ParseUUIDPipe()) identificador: string,
   ) {
+    // ParseUUIDPipe rejeita um id malformado antes de consultar o banco.
     return this.servicoChamados.buscarPorId(requisicao.user, identificador);
   }
 
   @Patch(':id/status')
-  @UseGuards(GuardaPapeis)
-  @PapeisPermitidos(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   atualizarStatus(
     @Param('id', new ParseUUIDPipe()) identificador: string,
-    @Body() dadosStatus: AtualizarStatusChamadoDto,
+    @Body() dadosStatus: UpdateTicketStatusDto,
   ) {
+    // Embora todo usuário autenticado possa ver seus chamados, somente ADMIN
+    // chega a esta operação de mudança de estado.
     return this.servicoChamados.atualizarStatus(
       identificador,
       dadosStatus.status,
@@ -76,7 +83,7 @@ export class ControladorChamados {
   enviarMensagem(
     @Req() requisicao: RequisicaoAutenticada,
     @Param('id', new ParseUUIDPipe()) identificador: string,
-    @Body() dadosMensagem: EnviarMensagemChamadoDto,
+    @Body() dadosMensagem: SendTicketMessageDto,
   ) {
     return this.servicoChamados.enviarMensagem(
       requisicao.user,
@@ -93,6 +100,8 @@ export class ControladorChamados {
     @Param('anexoId', new ParseUUIDPipe()) identificadorAnexo: string,
     @Res({ passthrough: true }) resposta: Response,
   ) {
+    // O serviço confirma simultaneamente a existência e a permissão de acesso.
+    // Só depois disso o controlador cria o fluxo de download do arquivo.
     const anexo = await this.servicoChamados.obterAnexo(
       requisicao.user,
       identificadorChamado,
@@ -100,11 +109,14 @@ export class ControladorChamados {
     );
 
     resposta.setHeader('Content-Type', anexo.mimeType);
+    // "attachment" orienta o navegador a baixar em vez de exibir; filename*
+    // preserva acentos e outros caracteres UTF-8 no nome original.
     resposta.setHeader(
       'Content-Disposition',
       `attachment; filename*=UTF-8''${encodeURIComponent(anexo.fileName)}`,
     );
 
+    // Stream evita carregar o arquivo inteiro novamente na memória da API.
     return new StreamableFile(createReadStream(anexo.caminhoAbsoluto));
   }
 }

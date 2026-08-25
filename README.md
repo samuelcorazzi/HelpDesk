@@ -95,10 +95,10 @@ HelpDesk-main/
 │   │   ├── migrations/              # Histórico versionado do banco
 │   │   └── schema.prisma            # Modelos User, Ticket e Attachment
 │   ├── src/
-│   │   ├── infraestrutura/          # Integrações externas e banco de dados
-│   │   ├── modulos/                 # Autenticação, usuários e chamados
+│   │   ├── infrastructure/          # Integrações externas e banco de dados
+│   │   ├── modules/                 # Autenticação, usuários e chamados
 │   │   ├── generated/prisma/        # Gerado automaticamente; não vai ao Git
-│   │   ├── modulo-principal.ts       # Módulo raiz
+│   │   ├── app.module.ts             # Módulo raiz
 │   │   └── main.ts                  # Inicialização, CORS e porta
 │   ├── .env.example                 # Modelo de configuração sem segredos
 │   ├── package.json

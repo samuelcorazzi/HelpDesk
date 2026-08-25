@@ -19,6 +19,7 @@ export default function PaginaUsuariosAdmin() {
   const [mensagem, setMensagem] = useState("");
 
   useEffect(() => {
+    // GET /users é protegido no backend; um token USER receberia acesso negado.
     async function carregarUsuarios() {
       try {
         const resposta = await apiRequest<User[]>("/users");
@@ -47,6 +48,8 @@ export default function PaginaUsuariosAdmin() {
     const dados = new FormData(formulario);
 
     try {
+      // Aqui FormData é usado apenas para ler os inputs. O corpo enviado à API é
+      // JSON porque não existe arquivo neste formulário.
       const usuarioCriado = await apiRequest<User>("/users", {
         method: "POST",
         body: JSON.stringify({
@@ -57,6 +60,7 @@ export default function PaginaUsuariosAdmin() {
         }),
       });
 
+      // O novo usuário aparece imediatamente no topo, sem recarregar a página.
       setUsuarios((usuariosAtuais) => [usuarioCriado, ...usuariosAtuais]);
       setMensagem("Usuário cadastrado com sucesso.");
       formulario.reset();

@@ -1,5 +1,7 @@
 export type Role = "USER" | "ADMIN";
 // Tipos que espelham os contratos públicos devolvidos pela API NestJS.
+// Se um enum ou campo mudar no backend, este arquivo deve mudar junto para o
+// TypeScript avisar quais telas precisam ser adaptadas.
 export type TicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
 export type Urgency = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
@@ -25,6 +27,8 @@ export interface Ticket {
   description: string;
   urgency: Urgency;
   status: TicketStatus;
+  // Pick reaproveita somente a parte pública de User devolvida dentro do chamado.
+  // As interrogações indicam relações que nem toda resposta precisa incluir.
   user?: Pick<User, "id" | "name" | "email">;
   attachments?: Attachment[];
   mensagens?: MensagemChamado[];

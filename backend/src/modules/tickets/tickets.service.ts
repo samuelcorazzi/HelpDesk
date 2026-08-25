@@ -4,13 +4,15 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import { extname, join, relative, resolve } from 'node:path';
-import { ServicoPrisma } from '../../infraestrutura/banco-de-dados/servico-prisma';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { Prisma } from '../../generated/prisma/client';
 import { Role, TicketStatus } from '../../generated/prisma/enums';
-import type { UsuarioAutenticado } from '../autenticacao/autenticacao.tipos';
-import { CriarChamadoDto, EnviarMensagemChamadoDto } from './chamados.dto';
+import type { UsuarioAutenticado } from '../auth/auth.types';
+import { CreateTicketDto, SendTicketMessageDto } from './tickets.dto';
 
 const selecaoMensagemPublica = {
+  // Define exatamente o formato de uma mensagem devolvida à interface. O autor
+  // aparece resumido e nenhum dado sensível da conta é carregado.
   id: true,
   conteudo: true,
   criadoEm: true,
@@ -24,6 +26,8 @@ const selecaoMensagemPublica = {
 } satisfies Prisma.MensagemChamadoSelect;
 
 const selecaoChamadoPublico = {
+  // Seleção base usada em listas e mutações. Além do chamado, inclui o resumo do
+  // solicitante e apenas os metadados necessários dos anexos.
   id: true,
   sequenceNumber: true,
   subject: true,
@@ -52,6 +56,7 @@ const selecaoChamadoPublico = {
 } satisfies Prisma.TicketSelect;
 
 const selecaoChamadoDetalhado = {
+  // A página de detalhes precisa também da conversa em ordem cronológica.
   ...selecaoChamadoPublico,
   mensagens: {
     orderBy: { criadoEm: 'asc' },
@@ -60,12 +65,12 @@ const selecaoChamadoDetalhado = {
 } satisfies Prisma.TicketSelect;
 
 @Injectable()
-export class ServicoChamados {
-  constructor(private readonly bancoDeDados: ServicoPrisma) {}
+export class TicketsService {
+  constructor(private readonly bancoDeDados: PrismaService) {}
 
   async criar(
     usuario: UsuarioAutenticado,
-    dadosChamado: CriarChamadoDto,
+    dadosChamado: CreateTicketDto,
     anexo?: Express.Multer.File,
   ) {
     // Se a criação no banco falhar, remove o arquivo para não deixar lixo local.
@@ -79,9 +84,11 @@ export class ServicoChamados {
           subject: dadosChamado.assunto.trim(),
           description: dadosChamado.descricao.trim(),
           urgency: dadosChamado.urgencia,
+          // O dono vem do token validado, nunca de um userId enviado no formulário.
           userId: usuario.id,
           attachments: anexo
             ? {
+                // Nested create grava Ticket e Attachment na mesma operação Prisma.
                 create: {
                   fileName: anexo.originalname.slice(0, 255),
                   storagePath: this.obterCaminhoRelativo(
@@ -96,6 +103,8 @@ export class ServicoChamados {
         select: selecaoChamadoPublico,
       });
     } catch (erro) {
+      // Compensa a gravação feita no sistema de arquivos caso o banco rejeite a
+      // criação. Sem isso haveria anexos órfãos ocupando espaço.
       if (caminhoAnexo) await unlink(caminhoAnexo).catch(() => undefined);
       throw erro;
     }
@@ -111,6 +120,8 @@ export class ServicoChamados {
   }
 
   async buscarPorId(usuario: UsuarioAutenticado, identificador: string) {
+    // Colocar a regra de propriedade dentro do WHERE evita buscar um registro e
+    // só depois descobrir que o usuário não poderia vê-lo.
     const chamado = await this.bancoDeDados.ticket.findFirst({
       where: {
         id: identificador,
@@ -119,6 +130,8 @@ export class ServicoChamados {
       select: selecaoChamadoDetalhado,
     });
 
+    // O mesmo 404 cobre "não existe" e "não pertence ao usuário", sem revelar a
+    // existência de chamados alheios.
     if (!chamado) throw new NotFoundException('Chamado não encontrado.');
     return chamado;
   }
@@ -126,8 +139,10 @@ export class ServicoChamados {
   async enviarMensagem(
     usuario: UsuarioAutenticado,
     identificador: string,
-    dadosMensagem: EnviarMensagemChamadoDto,
+    dadosMensagem: SendTicketMessageDto,
   ) {
+    // A primeira consulta é também uma autorização: ADMIN encontra qualquer
+    // chamado; USER encontra apenas um chamado que tenha o seu userId.
     const chamado = await this.bancoDeDados.ticket.findFirst({
       where: {
         id: identificador,
@@ -142,6 +157,7 @@ export class ServicoChamados {
       where: { id: identificador },
       data: {
         mensagens: {
+          // Criação aninhada liga a nova mensagem ao chamado e ao autor do token.
           create: {
             conteudo: dadosMensagem.conteudo,
             autorId: usuario.id,
@@ -150,6 +166,7 @@ export class ServicoChamados {
       },
       select: {
         mensagens: {
+          // Retorna só a mensagem recém-criada para o frontend acrescentá-la à tela.
           orderBy: { criadoEm: 'desc' },
           take: 1,
           select: selecaoMensagemPublica,
@@ -172,6 +189,7 @@ export class ServicoChamados {
       where: { id: identificador },
       data: {
         status,
+        // Ao reabrir ou colocar em atendimento, a data de resolução volta a nulo.
         resolvedAt: status === TicketStatus.RESOLVED ? new Date() : null,
       },
       select: selecaoChamadoPublico,
@@ -197,6 +215,8 @@ export class ServicoChamados {
     if (!anexo) throw new NotFoundException('Anexo não encontrado.');
 
     const caminhoAbsoluto = resolve(process.cwd(), anexo.storagePath);
+    // O banco pode conter o metadado mesmo se alguém apagou o arquivo do disco.
+    // Nesse caso a API responde 404 em vez de tentar abrir um caminho inexistente.
     if (!existsSync(caminhoAbsoluto)) {
       throw new NotFoundException('O arquivo do anexo não foi encontrado.');
     }
@@ -205,6 +225,8 @@ export class ServicoChamados {
   }
 
   private obterCaminhoRelativo(caminhoAbsoluto: string) {
+    // Guardar caminho relativo permite mover a pasta inteira do projeto sem
+    // invalidar os registros; a troca de barras mantém um formato uniforme.
     return relative(process.cwd(), caminhoAbsoluto).replaceAll('\\', '/');
   }
 

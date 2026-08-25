@@ -5,7 +5,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client';
 
 @Injectable()
-export class ServicoPrisma
+export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
@@ -26,10 +26,12 @@ export class ServicoPrisma
   }
 
   async onModuleInit(): Promise<void> {
+    // Abre a conexão quando o módulo NestJS termina de iniciar.
     await this.$connect();
   }
 
   async onModuleDestroy(): Promise<void> {
+    // Libera a conexão durante o encerramento controlado da aplicação.
     await this.$disconnect();
   }
 }

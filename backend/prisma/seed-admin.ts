@@ -8,6 +8,8 @@ import { Role } from '../src/generated/prisma/enums';
 config({ path: ['.env.local', '.env'], quiet: true });
 
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+// Para tarefas administrativas, a conexão de sessão é preferida ao pooler de
+// transações, mas DATABASE_URL continua disponível como alternativa.
 
 if (!connectionString) {
   throw new Error('Defina DIRECT_URL ou DATABASE_URL no arquivo backend/.env.');
@@ -34,6 +36,8 @@ async function createInitialAdmin() {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
+  // upsert torna o script idempotente: cria se o e-mail ainda não existe e
+  // atualiza a mesma conta nas execuções seguintes, sem gerar duplicatas.
   await prisma.user.upsert({
     where: { email },
     update: {
@@ -59,5 +63,7 @@ createInitialAdmin()
     process.exitCode = 1;
   })
   .finally(async () => {
+    // Scripts independentes não têm o ciclo de vida do NestJS; precisam fechar o
+    // Prisma explicitamente para que o processo termine e devolva o terminal.
     await prisma.$disconnect();
   });

@@ -29,6 +29,8 @@ const assinarArmazenamento = () => () => undefined;
 const obterAdministradorNoServidor = () => false;
 
 function obterAdministradorNoCliente() {
+  // O papel salvo decide quais controles mostrar. Isso não concede permissão:
+  // o backend ainda rejeita um PATCH de status feito por quem não é ADMIN.
   try {
     const usuarioArmazenado = localStorage.getItem("helpdesk_user");
     const usuario = usuarioArmazenado
@@ -56,12 +58,16 @@ export default function TicketDetailsPage() {
   const [mensagem, definirMensagem] = useState("");
   const [enviandoMensagem, definirEnviandoMensagem] = useState(false);
   const administrador = useSyncExternalStore(
+    // A página é renderizada também no servidor, onde localStorage não existe.
+    // O snapshot do servidor é false e o do cliente lê a sessão armazenada.
     assinarArmazenamento,
     obterAdministradorNoCliente,
     obterAdministradorNoServidor,
   );
 
   useEffect(() => {
+    // [id].tsx é uma rota dinâmica. router.query.id só fica disponível depois
+    // que o roteador termina de interpretar a URL no navegador.
     if (!roteador.isReady || typeof roteador.query.id !== "string") return;
 
     async function carregarChamado(identificador: string) {
@@ -87,6 +93,8 @@ export default function TicketDetailsPage() {
     definirErro("");
     definirAnexoBaixando(anexo.id);
     try {
+      // A rota contém ids do chamado e do anexo; o backend cruza ambos com o
+      // usuário autenticado antes de entregar o conteúdo binário.
       await baixarArquivoApi(
         `/chamados/${chamado.id}/anexos/${anexo.id}`,
         anexo.fileName,
@@ -120,6 +128,8 @@ export default function TicketDetailsPage() {
       definirChamado((chamadoAtual) =>
         chamadoAtual
           ? {
+              // A resposta do PATCH não inclui mensagens. Por isso os campos do
+              // chamado são mesclados e a conversa carregada é preservada.
               ...chamadoAtual,
               ...chamadoAtualizado,
               mensagens: chamadoAtual.mensagens,
@@ -147,6 +157,8 @@ export default function TicketDetailsPage() {
     const formulario = evento.currentTarget;
     const dadosFormulario = new FormData(formulario);
     const conteudo = String(dadosFormulario.get("conteudo") ?? "").trim();
+    // Além do required do HTML e do DTO no backend, esta checagem evita uma
+    // requisição desnecessária quando o texto contém somente espaços.
     if (!conteudo) return;
 
     definirErro("");
@@ -166,6 +178,7 @@ export default function TicketDetailsPage() {
         chamadoAtual
           ? {
               ...chamadoAtual,
+              // Acrescenta a resposta da API à conversa sem recarregar o chamado.
               updatedAt: novaMensagem.criadoEm,
               mensagens: [...(chamadoAtual.mensagens ?? []), novaMensagem],
             }

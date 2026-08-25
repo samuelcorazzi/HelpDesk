@@ -6,6 +6,7 @@ interface StatusConexaoProps {
 }
 
 export function ConnectionStatus({ compacto = false }: StatusConexaoProps) {
+  // null significa que a primeira verificação ainda não terminou.
   const [status, definirStatus] = useState<StatusConexao | null>(null);
   const [verificando, definirVerificando] = useState(false);
 
@@ -16,6 +17,8 @@ export function ConnectionStatus({ compacto = false }: StatusConexaoProps) {
   }, []);
 
   useEffect(() => {
+    // O efeito consulta imediatamente, repete a cada 30 segundos e também tenta
+    // novamente quando o navegador detecta que a internet voltou.
     let componenteAtivo = true;
     const atualizarAutomaticamente = () => {
       void consultarStatusApi().then((novoStatus) => {
@@ -28,12 +31,14 @@ export function ConnectionStatus({ compacto = false }: StatusConexaoProps) {
     window.addEventListener("online", atualizarAutomaticamente);
 
     return () => {
+      // A limpeza evita timer e atualização de estado após desmontar o componente.
       componenteAtivo = false;
       window.clearInterval(intervalo);
       window.removeEventListener("online", atualizarAutomaticamente);
     };
   }, []);
 
+  // Para o sistema estar operacional, API e banco precisam responder juntos.
   const conectado = status?.servidorConectado && status.bancoConectado;
   const rotulo = !status
     ? "Verificando conexão..."

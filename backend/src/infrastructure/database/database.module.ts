@@ -1,10 +1,10 @@
 import { Global, Module } from '@nestjs/common';
 // Disponibiliza uma única conexão Prisma para todos os módulos NestJS.
-import { ServicoPrisma } from './servico-prisma';
+import { PrismaService } from './prisma.service';
 
 @Global()
 @Module({
-  providers: [ServicoPrisma],
-  exports: [ServicoPrisma],
+  providers: [PrismaService],
+  exports: [PrismaService],
 })
-export class ModuloBancoDeDados {}
+export class DatabaseModule {}

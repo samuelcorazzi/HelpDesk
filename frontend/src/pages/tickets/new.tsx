@@ -8,6 +8,8 @@ import { apiRequest } from "@/lib/api";
 import type { Ticket } from "@/lib/types";
 
 const TAMANHO_MAXIMO_ANEXO = 5 * 1024 * 1024;
+// Esta validação melhora a experiência, mas pode ser burlada no navegador. O
+// backend repete obrigatoriamente o limite e a conferência do tipo do arquivo.
 
 export default function NewTicketPage() {
   const roteador = useRouter();
@@ -20,6 +22,7 @@ export default function NewTicketPage() {
     definirErro("");
 
     if (arquivo && arquivo.size > TAMANHO_MAXIMO_ANEXO) {
+      // Limpar value permite que o mesmo arquivo seja selecionado novamente depois.
       evento.target.value = "";
       definirNomeAnexo("");
       definirErro("O anexo deve ter no máximo 5 MB.");
@@ -29,20 +32,21 @@ export default function NewTicketPage() {
     definirNomeAnexo(arquivo?.name ?? "");
   }
 
-  //Envia o chamado quando onSubmit é chamado
+  // O envio do formulário chama esta função sem recarregar a página.
   async function enviarChamado(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     definirErro("");
     definirEnviando(true);
 
-    //envia os dados para o Controlador dos chamados
     try {
+      // FormData reúne os campos e o arquivo para enviá-los ao controller de
+      // chamados. O navegador define automaticamente o Content-Type correto.
       const chamado = await apiRequest<Ticket>("/chamados", {
         method: "POST",
         body: new FormData(evento.currentTarget),
       });
 
-      //Em caso de sucesso, redireciona o usuário para a página de início /home passando o número do chamado gerado na URL
+      // Depois do sucesso, /home recebe o número e o exibe como HD-000001.
       await roteador.push(`/home?chamadoCriado=${chamado.sequenceNumber}`);
     } catch (erroEnvio) {
       definirErro(

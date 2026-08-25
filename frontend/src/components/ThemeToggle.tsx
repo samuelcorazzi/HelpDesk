@@ -12,6 +12,7 @@ const THEME_STORAGE_KEY = "helpdesk_theme";
 const THEME_CHANGE_EVENT = "helpdesk-theme-change";
 
 function getPreferredTheme(): Theme {
+  // Uma escolha manual salva tem prioridade sobre a preferência do sistema.
   const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
 
   if (storedTheme === "light" || storedTheme === "dark") {
@@ -24,6 +25,8 @@ function getPreferredTheme(): Theme {
 }
 
 function subscribeToTheme(onChange: () => void) {
+  // useSyncExternalStore precisa saber quando algo fora do React mudou: tema do
+  // sistema, localStorage em outra aba ou evento disparado por este componente.
   const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 
   window.addEventListener(THEME_CHANGE_EVENT, onChange);
@@ -44,6 +47,7 @@ export function ThemeToggle({
   const theme = useSyncExternalStore(
     subscribeToTheme,
     getPreferredTheme,
+    // Durante renderização no servidor não existe window; "light" é o snapshot seguro.
     () => "light",
   );
 
@@ -56,6 +60,7 @@ export function ThemeToggle({
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";
 
     localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    // data-theme ativa as variáveis CSS correspondentes em globals.css.
     document.documentElement.dataset.theme = nextTheme;
     document.documentElement.style.colorScheme = nextTheme;
     window.dispatchEvent(new Event(THEME_CHANGE_EVENT));

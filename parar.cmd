@@ -12,6 +12,8 @@ if /i not "%~1"=="silencioso" (
 
 powershell.exe -NoProfile -Command "$arquivo = Join-Path $env:HELPDESK_RAIZ '.helpdesk-processos'; if (Test-Path -LiteralPath $arquivo) { Get-Content -LiteralPath $arquivo | ForEach-Object { $idProcesso = [int]$_; $processo = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $idProcesso) -ErrorAction SilentlyContinue; if ($processo -and $processo.Name -eq 'cmd.exe' -and $processo.CommandLine -match 'HelpDesk (Backend|Frontend)') { taskkill.exe /PID $idProcesso /T /F | Out-Null } }; Remove-Item -LiteralPath $arquivo -Force }"
 
+REM A busca pelas portas e uma segunda garantia para encerrar servidores que
+REM estejam rodando mas nao tenham sido registrados no arquivo de PIDs.
 for %%P in (3001 3002) do (
   for /f %%I in ('powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort %%P -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique"') do taskkill.exe /PID %%I /T /F >nul 2>nul
 )

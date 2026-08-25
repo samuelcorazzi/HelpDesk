@@ -12,17 +12,21 @@ datasource db {
 }
 
 enum Role {
+  // Define o nível de acesso. USER abre/acompanha os próprios chamados;
+  // ADMIN gerencia contas e atende chamados de todos os usuários.
   USER
   ADMIN
 }
 
 enum TicketStatus {
+  // Ciclo de vida simplificado de um chamado de suporte.
   OPEN
   IN_PROGRESS
   RESOLVED
 }
 
 enum Urgency {
+  // Prioridade informada pelo solicitante na abertura do chamado.
   LOW
   MEDIUM
   HIGH
@@ -38,6 +42,8 @@ model User {
   role         Role    @default(USER)
   active       Boolean @default(true)
 
+  // Campos em lista são o lado "um" de relações um-para-muitos: um usuário
+  // pode possuir vários chamados, registros de login e mensagens.
   tickets        Ticket[]
   registrosLogin RegistroLogin[]
   mensagens      MensagemChamado[]
@@ -75,12 +81,15 @@ model Ticket {
   urgency        Urgency
   status         TicketStatus @default(OPEN)
 
+  // userId é a chave estrangeira gravada na tabela; user é a navegação tipada
+  // que o Prisma oferece para consultar os dados do dono do chamado.
   userId String @db.Uuid
   user   User   @relation(fields: [userId], references: [id])
 
   attachments Attachment[]
   mensagens   MensagemChamado[]
 
+  // resolvedAt é opcional: fica nulo enquanto o chamado não está resolvido.
   resolvedAt DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt

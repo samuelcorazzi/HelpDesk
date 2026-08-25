@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    // Evita o envio HTML tradicional, que recarregaria a página inteira.
     event.preventDefault();
     setError("");
     setLoading(true);
@@ -20,6 +21,8 @@ export default function LoginPage() {
     const formData = new FormData(event.currentTarget);
 
     try {
+      // O login é a única chamada que ainda não possui token. apiRequest enviará
+      // estes dados como JSON para POST /api/auth/login.
       const response = await apiRequest<LoginResponse>("/auth/login", {
         method: "POST",
         body: JSON.stringify({
@@ -28,9 +31,12 @@ export default function LoginPage() {
         }),
       });
 
+      // O token autentica chamadas futuras; o usuário salvo serve para montar a
+      // interface. Permissões continuam sendo confirmadas novamente pela API.
       localStorage.setItem("helpdesk_token", response.accessToken);
       localStorage.setItem("helpdesk_user", JSON.stringify(response.user));
 
+      // Cada papel inicia em um painel diferente após o mesmo processo de login.
       await router.push(response.user.role === "ADMIN" ? "/admin" : "/home");
     } catch (requestError) {
       setError(

@@ -9,6 +9,8 @@ import {
 } from "@/lib/ticket-utils";
 
 export function TicketCard({ ticket }: { ticket: Ticket }) {
+  // O componente recebe um Ticket pronto e não mantém estado próprio. Clicar em
+  // qualquer ponto do cartão abre a rota dinâmica /tickets/[id].
   return (
     <Link className="ticket-card" href={`/tickets/${ticket.id}`}>
       <div className="ticket-main">

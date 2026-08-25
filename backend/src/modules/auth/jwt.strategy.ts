@@ -3,14 +3,14 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ServicoUsuarios } from '../usuarios/usuarios.servico';
-import type { ConteudoTokenJwt } from './autenticacao.tipos';
+import { UsersService } from '../users/users.service';
+import type { JwtPayload } from './auth.types';
 
 @Injectable()
-export class EstrategiaJwt extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     servicoConfiguracao: ConfigService,
-    private readonly servicoUsuarios: ServicoUsuarios,
+    private readonly usuarios: UsersService,
   ) {
     const segredo = servicoConfiguracao.get<string>('JWT_SECRET');
 
@@ -19,14 +19,18 @@ export class EstrategiaJwt extends PassportStrategy(Strategy) {
     }
 
     super({
+      // Espera o formato "Authorization: Bearer <token>" e também recusa tokens
+      // expirados. A assinatura é conferida com o mesmo JWT_SECRET do login.
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: segredo,
     });
   }
 
-  async validate(conteudoToken: ConteudoTokenJwt) {
-    const usuario = await this.servicoUsuarios.buscarPorIdParaAutenticacao(
+  async validate(conteudoToken: JwtPayload) {
+    // Não basta a assinatura estar correta: a conta ainda precisa existir e
+    // estar ativa. Assim, desativar um usuário invalida até tokens ainda válidos.
+    const usuario = await this.usuarios.buscarPorIdParaAutenticacao(
       conteudoToken.sub,
     );
 
@@ -34,6 +38,7 @@ export class EstrategiaJwt extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Usuário inválido ou desativado.');
     }
 
+    // O objeto retornado pelo validate vira request.user nas rotas protegidas.
     return {
       id: usuario.id,
       email: usuario.email,

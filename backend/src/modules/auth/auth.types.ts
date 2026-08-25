@@ -2,7 +2,7 @@ import type { Request } from 'express';
 // Tipos compartilhados pelo token JWT, guards e controladores protegidos.
 import type { Role } from '../../generated/prisma/enums';
 
-export interface ConteudoTokenJwt {
+export interface JwtPayload {
   sub: string;
   email: string;
   role: Role;

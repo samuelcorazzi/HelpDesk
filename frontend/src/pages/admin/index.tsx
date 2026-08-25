@@ -23,6 +23,8 @@ export default function PaginaPainelAdmin() {
   const [mensagem, definirMensagem] = useState("");
 
   useEffect(() => {
+    // O endpoint é o mesmo usado pelo usuário. É o backend que percebe o papel
+    // ADMIN no token e, nesse caso, não aplica o filtro por proprietário.
     async function carregarChamados() {
       try {
         definirChamados(await apiRequest<Ticket[]>("/chamados"));
@@ -41,6 +43,7 @@ export default function PaginaPainelAdmin() {
   }, []);
 
   const chamadosFiltrados = useMemo(() => {
+    // A busca administrativa também considera os dados do solicitante.
     const termo = busca.trim().toLowerCase();
     if (!termo) return chamados;
 
@@ -64,6 +67,7 @@ export default function PaginaPainelAdmin() {
     definirChamadoAtualizando(chamado.id);
 
     try {
+      // Só ADMIN passa pelo GuardaPapeis deste endpoint no backend.
       const chamadoAtualizado = await apiRequest<Ticket>(
         `/chamados/${chamado.id}/status`,
         {
@@ -73,6 +77,7 @@ export default function PaginaPainelAdmin() {
       );
 
       definirChamados((chamadosAtuais) =>
+        // Substitui localmente apenas a linha alterada, evitando buscar a lista toda.
         chamadosAtuais.map((item) =>
           item.id === chamado.id ? chamadoAtualizado : item,
         ),

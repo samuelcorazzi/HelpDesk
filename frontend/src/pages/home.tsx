@@ -27,6 +27,7 @@ export default function HomePage() {
   const [carregando, definirCarregando] = useState(true);
 
   useEffect(() => {
+    // O array vazio no fim faz esta busca acontecer uma vez, após montar a página.
     async function carregarChamados() {
       try {
         definirChamados(await apiRequest<Ticket[]>("/chamados"));
@@ -45,6 +46,8 @@ export default function HomePage() {
   }, []);
 
   const chamadosFiltrados = useMemo(() => {
+    // A lista original permanece intacta. useMemo recalcula a lista visível apenas
+    // quando texto, chamados ou filtro mudam.
     const termo = busca.trim().toLowerCase();
 
     return chamados.filter((chamado) => {
@@ -60,6 +63,8 @@ export default function HomePage() {
   }, [busca, chamados, filtroAtivo]);
 
   const quantidadePorStatus = (status: TicketStatus | "ALL") =>
+    // Os cartões de resumo são derivados dos mesmos chamados já carregados;
+    // não há necessidade de uma segunda requisição apenas para as contagens.
     status === "ALL"
       ? chamados.length
       : chamados.filter((chamado) => chamado.status === status).length;
@@ -82,6 +87,8 @@ export default function HomePage() {
         </section>
 
         {roteador.query.chamadoCriado ? (
+          // A página de criação inclui o número na URL após o POST para que o
+          // usuário veja imediatamente o protocolo recém-gerado.
           <p className="form-message form-message-success">
             Chamado enviado com sucesso. Protocolo{" "}
             {formatProtocol(Number(roteador.query.chamadoCriado))}.

@@ -11,7 +11,9 @@ import {
 } from 'class-validator';
 import { Role } from '../../generated/prisma/enums';
 
-export class CriarUsuarioDto {
+export class CreateUserDto {
+  // O ponto de exclamação informa ao TypeScript que o ValidationPipe preencherá
+  // o campo em tempo de execução, mesmo sem um construtor nesta classe.
   @IsString()
   @Length(2, 120)
   name!: string;
@@ -30,7 +32,9 @@ export class CriarUsuarioDto {
   role?: Role;
 }
 
-export class AtualizarUsuarioDto {
+export class UpdateUserDto {
+  // Todos os campos são opcionais porque o PATCH permite alterar só um deles.
+  // Quando fornecido, cada campo ainda precisa obedecer às mesmas restrições.
   @IsOptional()
   @IsString()
   @Length(2, 120)
@@ -52,7 +56,8 @@ export class AtualizarUsuarioDto {
   role?: Role;
 }
 
-export class AtualizarStatusUsuarioDto {
+export class UpdateUserStatusDto {
+  // Exigir boolean real evita aceitar acidentalmente strings como "false".
   @IsBoolean()
   active!: boolean;
 }

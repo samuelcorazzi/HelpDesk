@@ -6,9 +6,9 @@ import { unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { ServicoPrisma } from '../src/infraestrutura/banco-de-dados/servico-prisma';
+import { AppModule } from '../src/app.module';
 import { Role } from '../src/generated/prisma/enums';
-import { ModuloPrincipal } from '../src/modulo-principal';
+import { PrismaService } from '../src/infrastructure/database/prisma.service';
 
 interface RespostaEntradaTeste {
   accessToken: string;
@@ -237,9 +237,9 @@ describe('API HelpDesk (ponta a ponta)', () => {
       });
 
     const moduloTeste: TestingModule = await Test.createTestingModule({
-      imports: [ModuloPrincipal],
+      imports: [AppModule],
     })
-      .overrideProvider(ServicoPrisma)
+      .overrideProvider(PrismaService)
       .useValue({
         onModuleInit: jest.fn(),
         onModuleDestroy: jest.fn(),

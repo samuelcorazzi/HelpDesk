@@ -17,6 +17,8 @@ const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 function getAccess(area: AreaAplicacao, isClient: boolean) {
+  // localStorage só existe no navegador. Durante SSR o componente permanece em
+  // "loading" para não tentar decidir acesso com dados indisponíveis.
   if (!isClient) return "loading";
 
   const token = localStorage.getItem("helpdesk_token");
@@ -26,6 +28,8 @@ function getAccess(area: AreaAplicacao, isClient: boolean) {
 
   try {
     const user = JSON.parse(storedUser) as User;
+    // Este bloqueio melhora a navegação, mas a segurança real está nos guards do
+    // backend, pois localStorage pode ser alterado manualmente pelo visitante.
     return area === "admin" && user.role !== "ADMIN" ? "home" : "allowed";
   } catch {
     return "login";
@@ -52,10 +56,14 @@ export function Header({ children, area = "user" }: HeaderProps) {
   );
   const user = getStoredUser(isClient);
   const areaResolvida: AreaAplicacao =
+    // "auto" é usado no detalhe do chamado, uma página compartilhada entre
+    // usuário e administrador que deve montar a navegação adequada ao papel.
     area === "auto" ? (user?.role === "ADMIN" ? "admin" : "user") : area;
   const access = getAccess(areaResolvida, isClient);
 
   useEffect(() => {
+    // Redirecionamentos são efeitos porque dependem do router e do localStorage,
+    // recursos exclusivos do lado do cliente.
     if (access === "login") {
       localStorage.removeItem("helpdesk_token");
       localStorage.removeItem("helpdesk_user");
@@ -66,6 +74,7 @@ export function Header({ children, area = "user" }: HeaderProps) {
   }, [access, router]);
 
   function logout() {
+    // Como o JWT é stateless, sair consiste em remover a cópia local do token.
     localStorage.removeItem("helpdesk_token");
     localStorage.removeItem("helpdesk_user");
     void router.push("/login");

@@ -10,24 +10,23 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Role } from '../../generated/prisma/enums';
-import { GuardaAutenticacaoJwt } from '../autenticacao/guarda-autenticacao-jwt';
-import { GuardaPapeis } from '../autenticacao/guarda-papeis';
-import { PapeisPermitidos } from '../autenticacao/papeis.decorador';
-import {
-  AtualizarStatusUsuarioDto,
-  AtualizarUsuarioDto,
-  CriarUsuarioDto,
-} from './usuarios.dto';
-import { ServicoUsuarios } from './usuarios.servico';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles';
+import { RolesGuard } from '../auth/roles.guard';
+import { CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from './users.dto';
+import { UsersService } from './users.service';
 
 @Controller('users')
-@UseGuards(GuardaAutenticacaoJwt, GuardaPapeis)
-@PapeisPermitidos(Role.ADMIN)
-export class ControladorUsuarios {
-  constructor(private readonly servicoUsuarios: ServicoUsuarios) {}
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
+export class UsersController {
+  // Os decorators na classe protegem todos os endpoints abaixo. Primeiro o JWT
+  // identifica a conta; depois RolesGuard confirma que ela é ADMIN.
+  constructor(private readonly servicoUsuarios: UsersService) {}
 
   @Post()
-  criar(@Body() dadosUsuario: CriarUsuarioDto) {
+  criar(@Body() dadosUsuario: CreateUserDto) {
+    // POST /api/users cria uma conta. O corpo já foi validado pelo DTO.
     return this.servicoUsuarios.criar(dadosUsuario);
   }
 
@@ -44,15 +43,17 @@ export class ControladorUsuarios {
   @Patch(':id')
   atualizar(
     @Param('id', new ParseUUIDPipe()) identificador: string,
-    @Body() dadosUsuario: AtualizarUsuarioDto,
+    @Body() dadosUsuario: UpdateUserDto,
   ) {
+    // PATCH representa atualização parcial: o serviço altera somente os campos
+    // realmente presentes no corpo da requisição.
     return this.servicoUsuarios.atualizar(identificador, dadosUsuario);
   }
 
   @Patch(':id/status')
   atualizarStatus(
     @Param('id', new ParseUUIDPipe()) identificador: string,
-    @Body() dadosStatus: AtualizarStatusUsuarioDto,
+    @Body() dadosStatus: UpdateUserStatusDto,
   ) {
     return this.servicoUsuarios.atualizarStatus(
       identificador,

@@ -4,6 +4,8 @@ setlocal EnableExtensions
 chcp 65001 >nul
 
 set "HELPDESK_RAIZ=%~dp0"
+REM %~dp0 e a pasta onde este arquivo esta; assim o script funciona mesmo se
+REM for chamado a partir de outro diretorio.
 title HelpDesk - Inicialização
 cd /d "%HELPDESK_RAIZ%"
 
@@ -48,6 +50,7 @@ if not exist "%HELPDESK_RAIZ%backend\.env" (
 )
 
 echo [1/5] Encerrando instâncias anteriores do HelpDesk...
+REM O argumento silencioso evita mensagens extras durante a reinicializacao.
 call "%HELPDESK_RAIZ%parar.cmd" silencioso
 
 echo [2/5] Conferindo dependências do backend...
@@ -69,6 +72,8 @@ if not errorlevel 1 start "" code.cmd "%HELPDESK_RAIZ%"
 set "PID_BACKEND="
 set "PID_FRONTEND="
 
+REM Cada servidor abre em uma janela CMD separada. Os PIDs ficam gravados para
+REM que parar.cmd saiba exatamente quais processos encerrar depois.
 for /f %%P in ('powershell.exe -NoProfile -Command "$processo = Start-Process cmd.exe -WorkingDirectory (Join-Path $env:HELPDESK_RAIZ 'backend') -ArgumentList '/k', 'title HelpDesk Backend && npm.cmd run start:dev' -PassThru; $processo.Id"') do set "PID_BACKEND=%%P"
 for /f %%P in ('powershell.exe -NoProfile -Command "$processo = Start-Process cmd.exe -WorkingDirectory (Join-Path $env:HELPDESK_RAIZ 'frontend') -ArgumentList '/k', 'title HelpDesk Frontend && npm.cmd run dev' -PassThru; $processo.Id"') do set "PID_FRONTEND=%%P"
 
@@ -85,6 +90,7 @@ echo Aguardando o backend e o frontend ficarem disponíveis...
 set /a TENTATIVA=0
 
 :aguardar_frontend
+REM Faz no maximo 15 tentativas com intervalo de 2 segundos antes de abrir a URL.
 set /a TENTATIVA+=1
 timeout /t 2 /nobreak >nul
 curl.exe --silent --fail --max-time 1 http://localhost:3002/login >nul 2>nul

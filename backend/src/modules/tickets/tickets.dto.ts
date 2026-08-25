@@ -3,7 +3,9 @@ import { Transform } from 'class-transformer';
 import { IsEnum, IsString, Length } from 'class-validator';
 import { TicketStatus, Urgency } from '../../generated/prisma/enums';
 
-export class CriarChamadoDto {
+export class CreateTicketDto {
+  // Os nomes em português correspondem exatamente aos atributos name do
+  // formulário do frontend enviado em multipart/form-data.
   @IsString()
   @Length(3, 150)
   assunto!: string;
@@ -16,12 +18,15 @@ export class CriarChamadoDto {
   urgencia!: Urgency;
 }
 
-export class AtualizarStatusChamadoDto {
+export class UpdateTicketStatusDto {
+  // @IsEnum impede gravar qualquer texto fora dos três estados do Prisma.
   @IsEnum(TicketStatus)
   status!: TicketStatus;
 }
 
-export class EnviarMensagemChamadoDto {
+export class SendTicketMessageDto {
+  // O Transform remove espaços nas pontas antes de @Length validar. Desse modo,
+  // uma mensagem formada somente por espaços é tratada como vazia.
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )

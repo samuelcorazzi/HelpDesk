@@ -3,18 +3,21 @@ import { BadRequestException } from '@nestjs/common';
 import { memoryStorage } from 'multer';
 import { extname } from 'node:path';
 
+// 5 MiB expressos em bytes. O mesmo limite também aparece no frontend para dar
+// retorno rápido, mas a validação do backend é a que garante a segurança.
 export const TAMANHO_MAXIMO_ANEXO = 5 * 1024 * 1024;
 
 const tiposPermitidos = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const extensoesPermitidas = new Set(['.jpeg', '.jpg', '.pdf', '.png']);
 
-//guarda na memoria local do servidor antes do envio ao BD
 export const configuracaoUploadAnexo = {
+  // memoryStorage mantém o arquivo em anexo.buffer até o serviço decidir onde
+  // persistir. É simples para arquivos pequenos, mas não convém para arquivos enormes.
   storage: memoryStorage(),
   limits: {
     fileSize: TAMANHO_MAXIMO_ANEXO,
     files: 1,
-  }, //double check
+  },
   fileFilter: (
     _requisicao: Express.Request,
     arquivo: Express.Multer.File,
@@ -22,6 +25,9 @@ export const configuracaoUploadAnexo = {
   ) => {
     const extensao = extname(arquivo.originalname).toLowerCase();
 
+    // MIME e extensão precisam concordar com as listas permitidas. Isso reduz
+    // uploads acidentais de executáveis renomeados, embora inspeção do conteúdo
+    // seja uma evolução recomendável para um ambiente de produção.
     if (
       !tiposPermitidos.has(arquivo.mimetype) ||
       !extensoesPermitidas.has(extensao)
@@ -33,6 +39,7 @@ export const configuracaoUploadAnexo = {
       return;
     }
 
+    // No padrão de callbacks do Multer: null significa "sem erro" e true aceita.
     concluir(null, true);
   },
 };
