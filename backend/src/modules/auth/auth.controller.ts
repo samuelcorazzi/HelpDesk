@@ -42,6 +42,7 @@ export class AuthController {
   }
 
   @Get('me')
+  // protege a endpoint
   @UseGuards(JwtAuthGuard)
   obterPerfil(@Req() requisicao: RequisicaoAutenticada) {
     // Se o guard aceitou o token, a estratégia JWT já colocou o usuário em
