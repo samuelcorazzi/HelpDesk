@@ -8,12 +8,13 @@ export const TAMANHO_MAXIMO_ANEXO = 5 * 1024 * 1024;
 const tiposPermitidos = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const extensoesPermitidas = new Set(['.jpeg', '.jpg', '.pdf', '.png']);
 
+//guarda na memoria local do servidor antes do envio ao BD
 export const configuracaoUploadAnexo = {
   storage: memoryStorage(),
   limits: {
     fileSize: TAMANHO_MAXIMO_ANEXO,
     files: 1,
-  },
+  }, //double check
   fileFilter: (
     _requisicao: Express.Request,
     arquivo: Express.Multer.File,
