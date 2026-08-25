@@ -10,7 +10,7 @@ src/
 ├── modules/
 │   ├── auth/                        # Login, auditoria, JWT e permissões
 │   ├── tickets/                     # Chamados, mensagens e anexos
-│   └── users/                       # Criação e gerenciamento de usuários
+│   └── users/                       # Criação e consulta de usuários
 ├── main.ts                          # Ponto de entrada exigido pelo NestJS
 └── app.module.ts                    # Reúne os módulos da aplicação
 ```

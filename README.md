@@ -1,12 +1,12 @@
 # Sistema HelpDesk
 
-Projeto acadêmico para abertura, acompanhamento e gerenciamento de chamados de suporte. Usuários poderão registrar solicitações e acompanhar seus protocolos; administradores poderão gerenciar usuários, alterar o status dos chamados e visualizar indicadores.
+Projeto acadêmico para abertura, acompanhamento e gerenciamento de chamados de suporte. Usuários poderão registrar solicitações e acompanhar seus protocolos; administradores poderão cadastrar e consultar usuários, alterar o status dos chamados e visualizar indicadores.
 
 > Entrega prevista: **25 de agosto de 2026**.
 
 ## Estado atual
 
-O repositório contém uma fundação funcional, autenticação JWT, auditoria de login, gerenciamento administrativo de usuários e o fluxo do usuário para criar e acompanhar chamados.
+O repositório contém uma fundação funcional, autenticação JWT, auditoria de login, cadastro e consulta administrativa de usuários e o fluxo do usuário para criar e acompanhar chamados.
 
 | Item                                 | Estado                      |
 | ------------------------------------ | --------------------------- |
@@ -40,7 +40,7 @@ O repositório contém uma fundação funcional, autenticação JWT, auditoria d
 ### Administrador
 
 - Entrar em uma área administrativa.
-- Criar, listar, editar e desativar usuários.
+- Criar e consultar usuários.
 - Visualizar todos os chamados.
 - Alterar o status entre aberto, em atendimento e resolvido.
 - Visualizar e baixar anexos.
@@ -305,8 +305,6 @@ Todas as rotas abaixo exigem uma conta com papel `ADMIN`.
 | `POST`  | `/api/users`            | Criar usuário                       |
 | `GET`   | `/api/users`            | Listar usuários                     |
 | `GET`   | `/api/users/:id`        | Visualizar usuário                  |
-| `PATCH` | `/api/users/:id`        | Editar nome, e-mail, senha ou papel |
-| `PATCH` | `/api/users/:id/status` | Ativar ou desativar usuário         |
 
 As respostas nunca retornam o hash da senha.
 
@@ -402,7 +400,7 @@ Evoluir os anexos e o acompanhamento dos chamados:
 - Backend e frontend iniciam sem erro.
 - Segredos não aparecem no GitHub.
 - Login diferencia usuário e administrador.
-- Administrador cria e desativa usuários.
+- Administrador cria e consulta usuários.
 - Usuário abre e acompanha chamados.
 - Protocolo é gerado automaticamente.
 - Administrador altera o status.

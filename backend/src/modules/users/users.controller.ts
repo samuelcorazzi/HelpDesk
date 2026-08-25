@@ -1,11 +1,10 @@
 import {
-  // Endpoints administrativos para o ciclo de vida das contas de usuário.
+  // Endpoints administrativos para criar e consultar contas de usuário.
   Body,
   Controller,
   Get,
   Param,
   ParseUUIDPipe,
-  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -13,7 +12,7 @@ import { Role } from '../../generated/prisma/enums';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles';
 import { RolesGuard } from '../auth/roles.guard';
-import { CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from './users.dto';
+import { CreateUserDto } from './users.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -38,26 +37,5 @@ export class UsersController {
   @Get(':id')
   buscarPorId(@Param('id', new ParseUUIDPipe()) identificador: string) {
     return this.servicoUsuarios.buscarPorId(identificador);
-  }
-
-  @Patch(':id')
-  atualizar(
-    @Param('id', new ParseUUIDPipe()) identificador: string,
-    @Body() dadosUsuario: UpdateUserDto,
-  ) {
-    // PATCH representa atualização parcial: o serviço altera somente os campos
-    // realmente presentes no corpo da requisição.
-    return this.servicoUsuarios.atualizar(identificador, dadosUsuario);
-  }
-
-  @Patch(':id/status')
-  atualizarStatus(
-    @Param('id', new ParseUUIDPipe()) identificador: string,
-    @Body() dadosStatus: UpdateUserStatusDto,
-  ) {
-    return this.servicoUsuarios.atualizarStatus(
-      identificador,
-      dadosStatus.active,
-    );
   }
 }

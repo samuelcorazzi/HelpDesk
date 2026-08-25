@@ -7,7 +7,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { Prisma } from '../../generated/prisma/client';
-import { CreateUserDto, UpdateUserDto } from './users.dto';
+import { CreateUserDto } from './users.dto';
 
 export const selecaoUsuarioPublico = {
   // Este objeto é reutilizado em todas as consultas públicas. Uma lista de
@@ -76,56 +76,6 @@ export class UsersService {
     // ativa; não há necessidade de carregar o hash da senha nesta consulta.
     return this.bancoDeDados.user.findUnique({
       where: { id: identificador },
-      select: selecaoUsuarioPublico,
-    });
-  }
-
-  async atualizar(identificador: string, dadosUsuario: UpdateUserDto) {
-    const usuarioAtual = await this.buscarPorId(identificador);
-    // O objeto começa vazio e recebe apenas campos que vieram no PATCH.
-    const dadosAtualizacao: Prisma.UserUpdateInput = {};
-
-    if (dadosUsuario.name !== undefined) {
-      dadosAtualizacao.name = dadosUsuario.name.trim();
-    }
-
-    if (dadosUsuario.role !== undefined) {
-      dadosAtualizacao.role = dadosUsuario.role;
-    }
-
-    if (dadosUsuario.password !== undefined) {
-      // Mesmo em uma edição, a senha em texto puro nunca é persistida.
-      dadosAtualizacao.passwordHash = await bcrypt.hash(
-        dadosUsuario.password,
-        12,
-      );
-    }
-
-    if (dadosUsuario.email !== undefined) {
-      const emailNormalizado = this.normalizarEmail(dadosUsuario.email);
-
-      if (emailNormalizado !== usuarioAtual.email) {
-        // Só consulta duplicidade se o e-mail realmente mudou.
-        await this.garantirEmailDisponivel(emailNormalizado);
-      }
-
-      dadosAtualizacao.email = emailNormalizado;
-    }
-
-    return this.bancoDeDados.user.update({
-      where: { id: identificador },
-      data: dadosAtualizacao,
-      select: selecaoUsuarioPublico,
-    });
-  }
-
-  async atualizarStatus(identificador: string, estaAtivo: boolean) {
-    // buscarPorId gera 404 antes do update e produz uma mensagem mais clara.
-    await this.buscarPorId(identificador);
-
-    return this.bancoDeDados.user.update({
-      where: { id: identificador },
-      data: { active: estaAtivo },
       select: selecaoUsuarioPublico,
     });
   }

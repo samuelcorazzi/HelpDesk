@@ -12,7 +12,7 @@ export class RolesGuard implements CanActivate {
 
   canActivate(contexto: ExecutionContext): boolean {
     // adiciona uma camda de seguranca, mesmo que alguem altere alguma regra que de privilegios
-    // o reflector transcreve ela 
+    // o reflector transcreve ela
     const roles = this.refletor.getAllAndOverride<Role[]>(ROLES_KEY, [
       contexto.getHandler(),
       contexto.getClass(),
